@@ -371,16 +371,18 @@ Write-Host "  ──────────────────────
 Write-Host ""
 
 # --- Integrity check ---
-if (Test-Path $ChecksumsPath) {
+# Uses git hash-object for platform-independent hashing (handles CRLF/LF)
+$gitAvailable = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
+if ((Test-Path $ChecksumsPath) -and $gitAvailable) {
     Write-Host "  Verifying file integrity..."
     $failed = $false
     Get-Content $ChecksumsPath | ForEach-Object {
-        if ($_ -match "^([a-f0-9]+)\s+\*?(.+)$") {
+        if ($_ -match "^([a-f0-9]+)\s+(.+)$") {
             $expectedHash = $Matches[1]
-            $relPath = $Matches[2].TrimStart('*')
+            $relPath = $Matches[2]
             $fullPath = Join-Path $ScriptDir $relPath
             if (Test-Path $fullPath) {
-                $actualHash = (Get-FileHash -Path $fullPath -Algorithm SHA256).Hash.ToLower()
+                $actualHash = (git hash-object $fullPath 2>$null)
                 if ($actualHash -ne $expectedHash) {
                     Write-Host "    MISMATCH: $relPath"
                     $failed = $true
@@ -404,7 +406,7 @@ if (Test-Path $ChecksumsPath) {
         Write-Host "  Integrity check passed."
     }
     Write-Host ""
-} else {
+} elseif (-not (Test-Path $ChecksumsPath)) {
     Write-Host "  Note: No CHECKSUMS.sha256 found, skipping integrity verification."
     Write-Host ""
 }
