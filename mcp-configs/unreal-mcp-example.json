@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for Unreal Engine integration. This is a template - you need a compatible Unreal MCP server.",
+  "mcpServers": {
+    "unreal": {
+      "command": "npx",
+      "args": ["unreal-mcp-server"],
+      "env": {
+        "UE_PROJECT_PATH": "/path/to/your/unreal/project.uproject",
+        "UE_EDITOR_PATH": "/path/to/UnrealEditor"
+      }
+    }
+  },
+  "_tools_provided": [
+    "unreal_build - Build project (Development/Shipping)",
+    "unreal_run_tests - Run Automation tests",
+    "unreal_get_log - Read Unreal output log",
+    "unreal_execute_console - Execute console commands",
+    "unreal_get_world_outliner - Read current level actors"
+  ],
+  "_setup_instructions": [
+    "1. Install an Unreal MCP server: npm install -g unreal-mcp-server",
+    "2. Set UE_PROJECT_PATH to your .uproject file",
+    "3. Set UE_EDITOR_PATH to your UnrealEditor binary",
+    "4. Add this config to your Claude Code MCP settings",
+    "5. Restart Claude Code"
+  ]
+}
