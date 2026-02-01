@@ -1,0 +1,23 @@
+{
+  "name": "gd-skills",
+  "plugins": [{
+    "name": "gd-skills",
+    "source": "./",
+    "description": "Game development plugin for Claude Code with multi-engine support (Godot, Roblox, Unity, Unreal, Web). Create full games from 11 genre templates (platformer, FPS, survival, horror, RPG, racing, puzzle, tower defense, farming, classic games, roguelike). Includes 15 specialized agents, 26 skills, 30 commands, 5 debugger agents (performance, physics, AI, audio, network), and game feel polish tools. Production-ready with menus, settings, leaderboards, save/load, audio systems, and camera controllers.",
+    "category": "workflow",
+    "tags": [
+      "game-development",
+      "godot",
+      "unity",
+      "unreal",
+      "roblox",
+      "multiplayer",
+      "horror",
+      "rpg",
+      "roguelike",
+      "templates",
+      "debugging",
+      "agents"
+    ]
+  }]
+}

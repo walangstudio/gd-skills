@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for Unity Engine integration. This is a template - you need a compatible Unity MCP server.",
+  "mcpServers": {
+    "unity": {
+      "command": "npx",
+      "args": ["unity-mcp-server"],
+      "env": {
+        "UNITY_PROJECT_PATH": "/path/to/your/unity/project",
+        "UNITY_EDITOR_PATH": "/path/to/Unity/Hub/Editor/6000.0.0f1/Editor/Unity"
+      }
+    }
+  },
+  "_tools_provided": [
+    "unity_run_tests - Run Unity Test Runner (EditMode/PlayMode)",
+    "unity_build - Build project for a target platform",
+    "unity_get_console_log - Read Unity Console output",
+    "unity_execute_csharp - Execute C# code in the editor",
+    "unity_get_hierarchy - Read the current scene hierarchy"
+  ],
+  "_setup_instructions": [
+    "1. Install a Unity MCP server: npm install -g unity-mcp-server",
+    "2. Set UNITY_PROJECT_PATH to your Unity project root (contains Assets/)",
+    "3. Set UNITY_EDITOR_PATH to your Unity Editor binary",
+    "4. Add this config to your Claude Code MCP settings",
+    "5. Restart Claude Code"
+  ]
+}

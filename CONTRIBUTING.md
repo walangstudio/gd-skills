@@ -1,0 +1,113 @@
+# Contributing to gd-skills
+
+Thank you for your interest in contributing to gd-skills! This guide explains how the plugin is structured and how to add new content.
+
+## Project Structure
+
+```
+gd-skills/
+├── agents/     15 specialized AI agent definitions (.md)
+├── skills/     26 skill templates with code examples (*/SKILL.md)
+├── commands/   30 slash command definitions (.md)
+├── rules/      6 coding standard files (.md)
+├── contexts/   5 engine mode files (.md)
+├── hooks/      Automation hooks (.json + .js scripts)
+├── scripts/    Validation and utility scripts
+└── mcp-configs/  MCP server configuration examples
+```
+
+## File Format
+
+All agents, skills, commands, and contexts use markdown files with YAML frontmatter:
+
+```markdown
+---
+name: my-agent-name
+description: Short description of what this agent does.
+tools: Read, Write, Edit, Bash, Grep, Glob
+model: opus
+---
+
+# Agent Title
+
+Content here...
+```
+
+### Required Frontmatter
+
+| Component | Required Fields |
+|-----------|----------------|
+| Agents | `name`, `description`, `tools`, `model` |
+| Skills | `name`, `description` |
+| Commands | `description` |
+| Contexts | `description` |
+
+## Adding a New Genre Template
+
+1. Create `skills/my-genre-template/SKILL.md` with YAML frontmatter
+2. Include code examples for at least Godot and one other engine
+3. Reference shared component skills where applicable (e.g., `player-controllers`, `enemy-ai-patterns`)
+4. Create `commands/create-my-genre.md` with the command definition
+5. Update the `genre-template-master` agent if needed
+6. Add the new skill/command to `README.md`
+7. Run `scripts/validate-plugin.sh` and `scripts/validate-references.sh`
+8. Regenerate `CHECKSUMS.sha256`
+
+## Adding a New Agent
+
+1. Create `agents/my-agent.md` with YAML frontmatter
+2. Define the agent's role, expertise, and code patterns
+3. Reference relevant skills and rules
+4. Run validation scripts
+
+## Adding a New Engine
+
+1. Create `agents/engine-specialist.md`
+2. Create `rules/engine-style.md`
+3. Create `contexts/engine-mode.md`
+4. Create `skills/engine-patterns/SKILL.md`
+5. Add engine-specific code to existing genre templates
+6. Add a PostToolUse hook in `hooks/hooks.json` (with a standalone .js checker)
+7. Add an MCP config example in `mcp-configs/`
+8. Update `plugin.json` engines list
+
+## Adding a New Hook
+
+Hooks in `hooks/hooks.json` should use standalone .js scripts in the `hooks/` directory rather than inline `node -e` commands. This prevents command injection via file path interpolation.
+
+```json
+{
+  "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.ext$\"",
+  "hooks": [{
+    "type": "command",
+    "command": "node hooks/check-my-pattern.js \"${tool_input.file_path}\""
+  }],
+  "description": "Description of what this hook checks"
+}
+```
+
+## Code Quality
+
+- Run `scripts/validate-plugin.sh` to check structure
+- Run `scripts/validate-references.sh` to check cross-references
+- Regenerate `CHECKSUMS.sha256` after any content changes:
+  ```bash
+  find agents skills commands rules hooks contexts -type f \( -name "*.md" -o -name "*.json" -o -name "*.js" \) | sort | xargs sha256sum > CHECKSUMS.sha256
+  ```
+
+## Coding Standards for Examples
+
+- **Godot**: Follow `rules/godot-style.md` — type hints on everything
+- **Unity**: Follow `rules/unity-style.md` — `[SerializeField]`, not public fields
+- **Unreal**: Follow `rules/unreal-style.md` — UPROPERTY/UFUNCTION macros
+- **Roblox**: Follow `rules/roblox-style.md` — `--!strict`, type annotations
+- **JavaScript**: Follow `rules/javascript-style.md` — `const`/`let`, ES6+ patterns
+
+## Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run both validation scripts
+5. Regenerate CHECKSUMS.sha256
+6. Submit a PR with a clear description of what you added/changed

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for Godot Engine integration. This is a template - you need to install a compatible Godot MCP server first.",
+  "mcpServers": {
+    "godot": {
+      "command": "npx",
+      "args": ["godot-mcp-server"],
+      "env": {
+        "GODOT_PATH": "/path/to/godot",
+        "PROJECT_PATH": "/path/to/your/godot/project"
+      }
+    }
+  },
+  "_tools_provided": [
+    "godot_run_scene - Run a scene in the Godot editor",
+    "godot_get_scene_tree - Read the current scene tree",
+    "godot_execute_gdscript - Execute GDScript code",
+    "godot_export - Export the project for a platform",
+    "godot_get_errors - Read editor error/warning log"
+  ],
+  "_setup_instructions": [
+    "1. Install a Godot MCP server: npm install -g godot-mcp-server",
+    "2. Set GODOT_PATH to your Godot 4 binary",
+    "3. Set PROJECT_PATH to your Godot project root",
+    "4. Add this config to your Claude Code MCP settings",
+    "5. Restart Claude Code"
+  ]
+}

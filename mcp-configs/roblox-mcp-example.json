@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for Roblox Studio integration. This is a template - you need a compatible Roblox MCP server.",
+  "mcpServers": {
+    "roblox": {
+      "command": "npx",
+      "args": ["roblox-mcp-server"],
+      "env": {
+        "ROBLOX_PLACE_FILE": "/path/to/your/game.rbxlx",
+        "ROBLOX_API_KEY": "your-open-cloud-api-key"
+      }
+    }
+  },
+  "_tools_provided": [
+    "roblox_get_explorer - Read the Explorer tree (DataModel)",
+    "roblox_execute_luau - Execute Luau code in Studio command bar",
+    "roblox_publish - Publish place to Roblox",
+    "roblox_get_output - Read Studio Output window",
+    "roblox_run_playtest - Start/stop a playtest session"
+  ],
+  "_setup_instructions": [
+    "1. Install a Roblox MCP server: npm install -g roblox-mcp-server",
+    "2. Set ROBLOX_PLACE_FILE to your .rbxlx or .rbxl file",
+    "3. Optionally set ROBLOX_API_KEY for Open Cloud features",
+    "4. Ensure Roblox Studio is running with the place open",
+    "5. Add this config to your Claude Code MCP settings",
+    "6. Restart Claude Code"
+  ]
+}

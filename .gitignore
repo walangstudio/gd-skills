@@ -1,0 +1,27 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+*.test.js
+
+# Temporary
+*.tmp
+.cache/
+
+# Claude Code
+.claude/
+tmpclaude*
