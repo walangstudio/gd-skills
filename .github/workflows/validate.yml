@@ -1,0 +1,71 @@
+name: Validate Plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate plugin structure
+        run: |
+          chmod +x scripts/validate-plugin.sh
+          bash scripts/validate-plugin.sh
+
+      - name: Validate cross-references
+        run: |
+          chmod +x scripts/validate-references.sh
+          bash scripts/validate-references.sh
+
+      - name: Verify checksums
+        run: |
+          if [ -f CHECKSUMS.sha256 ]; then
+            echo "Verifying file integrity..."
+            sha256sum -c CHECKSUMS.sha256
+          else
+            echo "No CHECKSUMS.sha256 found, skipping."
+          fi
+
+      - name: Lint markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            agents/*.md
+            commands/*.md
+            rules/*.md
+            skills/**/*.md
+            contexts/*.md
+        continue-on-error: true
+
+      - name: Check for broken links in README
+        run: |
+          echo "Checking README references..."
+          errors=0
+
+          # Verify all commands listed in README exist
+          for cmd in $(grep -oP '/[a-z]+-[a-z-]+' README.md | sed 's|^/||' | sort -u); do
+            if [ ! -f "commands/$cmd.md" ]; then
+              echo "ERROR: README references /commands/$cmd but commands/$cmd.md does not exist"
+              errors=$((errors + 1))
+            fi
+          done
+
+          # Verify all agents listed in README exist
+          for agent in $(grep -oP '`([a-z]+-[a-z-]+(?:-specialist|-builder|-master|-debugger|-architect))`' README.md | sed 's/`//g' | sort -u); do
+            if [ ! -f "agents/$agent.md" ]; then
+              echo "ERROR: README references agent $agent but agents/$agent.md does not exist"
+              errors=$((errors + 1))
+            fi
+          done
+
+          if [ "$errors" -eq 0 ]; then
+            echo "All README references valid."
+          else
+            echo "$errors error(s) found."
+            exit 1
+          fi

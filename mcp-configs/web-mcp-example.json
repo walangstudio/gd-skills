@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for web game development. Provides browser automation for testing Phaser/Three.js/Babylon.js games.",
+  "mcpServers": {
+    "browser": {
+      "command": "npx",
+      "args": ["@anthropic-ai/mcp-server-puppeteer"],
+      "env": {
+        "PUPPETEER_LAUNCH_OPTIONS": "{\"headless\": false}"
+      }
+    }
+  },
+  "_tools_provided": [
+    "browser_navigate - Open the game in a browser",
+    "browser_screenshot - Take a screenshot of the game state",
+    "browser_click - Click at coordinates (simulate input)",
+    "browser_evaluate - Execute JavaScript in browser console",
+    "browser_resize - Resize viewport for responsive testing"
+  ],
+  "_setup_instructions": [
+    "1. Install Puppeteer MCP server: npm install -g @anthropic-ai/mcp-server-puppeteer",
+    "2. Start your game dev server (e.g., npm run dev)",
+    "3. Add this config to your Claude Code MCP settings",
+    "4. Navigate to your game URL (usually http://localhost:5173)",
+    "5. Use browser tools to interact with and test your game"
+  ]
+}

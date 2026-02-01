@@ -1,0 +1,72 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "tool == \"Bash\" && tool_input.command matches \"git commit\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node -e \"console.error('[Hook] Check for large game assets before commit. Use Git LFS for .png, .wav, .blend, .fbx files > 10MB')\""
+        }],
+        "description": "Remind about Git LFS for large game assets"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.gd$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-gdscript-types.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check for type hints in GDScript files"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.lua$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-luau-types.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check for type annotations in Luau files"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.cs$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-unity-conventions.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check Unity C# conventions"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.(cpp|h)$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-unreal-conventions.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check Unreal C++ conventions"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.(js|ts)$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-js-patterns.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check JavaScript/TypeScript game patterns"
+      }
+    ],
+    "SessionStart": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node -e \"console.log('[gd-skills] Game development plugin loaded. Use /create-game, /create-platformer, /create-fps, /create-horror, etc.');\""
+      }],
+      "description": "Welcome message on session start"
+    }],
+    "SessionEnd": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node -e \"console.log('[gd-skills] Session ended. Remember to commit your game changes!');\""
+      }],
+      "description": "Reminder on session end"
+    }]
+  }
+}
