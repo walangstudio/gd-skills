@@ -58,16 +58,16 @@ jobs:
           echo "Checking README references..."
           errors=0
 
-          # Verify all commands listed in README exist
-          for cmd in $(grep -oP '/[a-z]+-[a-z-]+' README.md | sed 's|^/||' | sort -u); do
+          # Verify all backtick-wrapped slash commands: `/command-name`
+          for cmd in $(tr -d '\r' < README.md | grep -oP '(?<=`/)[a-z]+-[a-z-]+(?=`)' | sort -u); do
             if [ ! -f "commands/$cmd.md" ]; then
-              echo "ERROR: README references /commands/$cmd but commands/$cmd.md does not exist"
+              echo "ERROR: README references /$cmd but commands/$cmd.md does not exist"
               errors=$((errors + 1))
             fi
           done
 
-          # Verify all agents listed in README exist
-          for agent in $(grep -oP '`([a-z]+-[a-z-]+(?:-specialist|-builder|-master|-debugger|-architect))`' README.md | sed 's/`//g' | sort -u); do
+          # Verify all backtick-wrapped agent names
+          for agent in $(tr -d '\r' < README.md | grep -oP '(?<=`)[a-z]+-[a-z-]*(?:specialist|builder|master|debugger|architect)(?=`)' | sort -u); do
             if [ ! -f "agents/$agent.md" ]; then
               echo "ERROR: README references agent $agent but agents/$agent.md does not exist"
               errors=$((errors + 1))
