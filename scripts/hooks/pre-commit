@@ -1,0 +1,15 @@
+#!/bin/bash
+# pre-commit hook for gd-skills
+# Regenerates CHECKSUMS.sha256 and stages it before each commit
+#
+# Setup (run once from the repo root):
+#   git config core.hooksPath scripts/hooks
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Regenerate checksums
+"$REPO_DIR/scripts/regenerate-checksums.sh"
+
+# Stage the updated checksums file
+git add "$REPO_DIR/CHECKSUMS.sha256"
