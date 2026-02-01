@@ -22,11 +22,22 @@ jobs:
           chmod +x scripts/validate-references.sh
           bash scripts/validate-references.sh
 
-      - name: Verify checksums
+      - name: Verify checksums are up to date
         run: |
           if [ -f CHECKSUMS.sha256 ]; then
-            echo "Verifying file integrity..."
-            sha256sum -c CHECKSUMS.sha256
+            echo "Regenerating checksums and comparing..."
+            cp CHECKSUMS.sha256 CHECKSUMS.sha256.committed
+            chmod +x scripts/regenerate-checksums.sh
+            bash scripts/regenerate-checksums.sh
+            if ! diff -q CHECKSUMS.sha256.committed CHECKSUMS.sha256 > /dev/null 2>&1; then
+              echo "ERROR: CHECKSUMS.sha256 is out of date."
+              echo "Run 'bash scripts/regenerate-checksums.sh' and commit the result."
+              echo ""
+              diff CHECKSUMS.sha256.committed CHECKSUMS.sha256 || true
+              exit 1
+            fi
+            echo "Checksums are up to date."
+            rm -f CHECKSUMS.sha256.committed
           else
             echo "No CHECKSUMS.sha256 found, skipping."
           fi
