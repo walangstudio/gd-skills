@@ -402,11 +402,27 @@ echo "  ────────────────────────
 echo ""
 
 # --- Integrity check ---
-if [ -f "$CHECKSUMS_FILE" ] && command -v sha256sum &>/dev/null; then
+# Uses git hash-object for platform-independent hashing (handles CRLF/LF)
+if [ -f "$CHECKSUMS_FILE" ] && command -v git &>/dev/null; then
     echo "  Verifying file integrity..."
-    if (cd "$SCRIPT_DIR" && sha256sum --quiet -c "$CHECKSUMS_FILE" 2>/dev/null); then
-        echo "  Integrity check passed."
-    else
+    integrity_failed=false
+    while IFS= read -r line; do
+        expected_hash=$(echo "$line" | awk '{print $1}')
+        file_path=$(echo "$line" | awk '{print $2}')
+        full_path="$SCRIPT_DIR/$file_path"
+        if [ ! -f "$full_path" ]; then
+            echo "    MISSING: $file_path"
+            integrity_failed=true
+        else
+            actual_hash=$(git hash-object "$full_path")
+            if [ "$actual_hash" != "$expected_hash" ]; then
+                echo "    MISMATCH: $file_path"
+                integrity_failed=true
+            fi
+        fi
+    done < "$CHECKSUMS_FILE"
+
+    if [ "$integrity_failed" = true ]; then
         echo "  WARNING: Integrity check failed — some files may have been modified."
         if [ "$FORCE" = false ]; then
             read -p "  Continue anyway? [y/N] " -n 1 -r
@@ -416,6 +432,8 @@ if [ -f "$CHECKSUMS_FILE" ] && command -v sha256sum &>/dev/null; then
                 exit 1
             fi
         fi
+    else
+        echo "  Integrity check passed."
     fi
     echo ""
 elif [ ! -f "$CHECKSUMS_FILE" ]; then
