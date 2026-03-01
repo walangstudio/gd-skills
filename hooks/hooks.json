@@ -28,6 +28,22 @@
         "description": "Check for type annotations in Luau files"
       },
       {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.lua$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "selene \"${tool_input.file_path}\" 2>&1 || echo '[selene] Not installed — run: rokit install'"
+        }],
+        "description": "Lint Luau files with Selene (requires rokit toolchain)"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.lua$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "stylua --check \"${tool_input.file_path}\" 2>&1 || echo '[stylua] Format issues found — run: stylua \"${tool_input.file_path}\"'"
+        }],
+        "description": "Check Luau formatting with StyLua (requires rokit toolchain)"
+      },
+      {
         "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.cs$\"",
         "hooks": [{
           "type": "command",

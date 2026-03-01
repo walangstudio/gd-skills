@@ -457,4 +457,33 @@ Players.PlayerAdded:Connect(function(player: Player)
 end)
 ```
 
+## Toolchain
+
+For teams or open-source projects, recommend the external dev workflow over Studio-only development.
+
+### When to Recommend External Toolchain
+- 2+ developers on the same project → Rojo enables proper git workflow
+- Open-source or community project → Wally for dep management, CI for quality gates
+- Performance-critical networking → Zap for typed buffer-packed events
+- Complex build/test pipeline → Lune for scripted automation
+
+### Key Tools
+- **Rokit** — version-pins all tools in `rokit.toml` (`rokit install` bootstraps everything)
+- **Rojo** — syncs `src/` directory structure to DataModel live; `rojo serve` then connect from Studio
+- **Wally** — `wally.toml` manifest + `wally install` → `Packages/` in ReplicatedStorage
+- **Selene** — Luau linter; `selene src/` with `selene.toml` pointing to `std = "roblox"`
+- **StyLua** — formatter; `stylua src/` with 4-space indent, 100-col width
+- **Lune** — run `.luau` scripts outside Studio for builds and test runners
+- **Zap** — define `network.zap` schema, generate typed client/server networking code
+
+### Studio-Only vs External
+| Scenario | Recommendation |
+|----------|----------------|
+| Solo hobby project | Studio-only |
+| Team project (2+) | External toolchain |
+| Performance-critical networking | Add Zap |
+| Open-source | External + CI |
+
+See `roblox-toolchain` skill for full config examples and the `/setup-roblox-toolchain` command to scaffold everything at once.
+
 **Remember**: Always use `--!strict`, type all variables and functions, validate ALL client input on server, use Services architecture, implement retry logic for DataStores, and follow Roblox security best practices (FilteringEnabled is always on).
