@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **5 major game engines** (Godot, Roblox, Unity, Unreal, Web) with **11 genre templates**, **15 specialized agents**, **26 skills**, and **30 commands**.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **5 major game engines** (Godot, Roblox, Unity, Unreal, Web) with **11 genre templates**, **16 specialized agents**, **27 skills**, and **32 commands**.
 
 ### Create a Full Game in Seconds
 
@@ -42,14 +42,15 @@ Create complete, playable games instantly:
 - **Unreal Engine 5.4+** (C++/Blueprints)
 - **JavaScript** (Phaser 3.80+, Three.js, Babylon.js)
 
-### 15 Specialized Agents
+### 16 Specialized Agents
 - **Engine specialists** (5): Godot, Roblox, Unity, Unreal, JavaScript
 - **Debuggers** (5): Performance, Physics, AI, Audio, Network
 - **Builders** (3): Full game, Component, Genre template
 - **Polish** (2): Game architect, Game feel specialist
+- **Validation** (1): Integration validator (cross-component wiring checks)
 
 ### 9 Shared Component Skills
-Reusable game systems referenced by all genre templates:
+Reusable game systems **shared across all genre templates** — every template references these instead of duplicating patterns:
 - **player-controllers** - FPS, third-person, top-down, platformer, vehicle
 - **enemy-ai-patterns** - Patrol, chase, ranged, boss, horde
 - **inventory-systems** - List, grid, weight-based, equipment slots
@@ -59,6 +60,10 @@ Reusable game systems referenced by all genre templates:
 - **ui-menu-systems** - Main menu, pause, settings, HUD, game over, transitions
 - **camera-systems** - Follow 2D/3D, orbit, side-scroll, screen shake
 - **dialogue-systems** - Branching dialogue, typewriter effect, conditional choices
+
+### Engine Toolchain Skills
+Platform-specific external development workflows:
+- **roblox-toolchain** - Rokit, Rojo, Wally, Selene, StyLua, Darklua, Lune, Zap
 
 ## Installation
 

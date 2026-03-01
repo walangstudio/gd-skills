@@ -41,5 +41,6 @@ game/
 
 ## Use These Skills
 - `roblox-patterns` for engine-specific patterns
+- `roblox-toolchain` for external dev workflow (Rokit, Rojo, Wally, Selene, StyLua, Lune, Zap)
 - `roblox-style` rule for coding standards
 - `roblox-specialist` agent for complex issues
