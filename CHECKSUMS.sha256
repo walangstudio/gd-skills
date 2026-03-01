@@ -6,11 +6,12 @@ f5866b12974b1fa28dd93faf6004bfac811f8b8f  agents/full-game-builder.md
 1c469044144a9c15bd0e5c90787200e18ebcb49e  agents/game-feel-specialist.md
 3b99e516037e9b8d73d0904ae2d212fb7e3a49f8  agents/genre-template-master.md
 4bd0a9091e278d4168ec62443224fbde38028b60  agents/godot-specialist.md
+72ece46d33202b64b5dfcbc95300455c69894575  agents/integration-validator.md
 46018b9106a755129101a087122d8e39773487cc  agents/javascript-specialist.md
 89ac958b9f45cb6a92b0d7600818b37331ab9dc8  agents/network-debugger.md
 f2be85e3603bde95cc1a3e984c6e25605653315a  agents/performance-debugger.md
 e260be45226f6604b70e19cf7e60473bcb847572  agents/physics-debugger.md
-dd3ac66761342a2af3024ac82d41f19b7474d642  agents/roblox-specialist.md
+f2ddcc06d1fc62e8ced9b0d495d30297e49892f0  agents/roblox-specialist.md
 364f396f0629dddb66785938a843bc7b48381966  agents/unity-specialist.md
 a617fbb59903969caa18976dafef3a56d29d82ad  agents/unreal-specialist.md
 710783615b87013d1291bb13c9ab313db9161159  commands/add-game-feel.md
@@ -39,12 +40,14 @@ c04a9fbdd3cd148687d5689093a9d41144748f57  commands/create-tower-defense.md
 c8bc8d91587e60847119ca59ea3703288861cbd7  commands/debug-game.md
 4ff74e7bf18c8a88c9249cb30029fc73cd86b99f  commands/optimize-performance.md
 dc2efafba31ce190994e76885be25303cd98ef89  commands/setup-godot.md
-63a274e4145190d7b7498f9a1708acd6d4e7d6b3  commands/setup-roblox.md
+072f0447f31270d6a952bd11dbad0daf0d4c0943  commands/setup-roblox-toolchain.md
+aa1713c8f320fdb899ea62d19baf86eae231d2a6  commands/setup-roblox.md
 58c682d2fcd66febfaf5fcf90220a8a573be96c7  commands/setup-unity.md
 5cdcab9c218fd0a0e319d8465efdcb9888dc3f33  commands/setup-unreal.md
 079bb2081864bb6cef328e090985f9420f2f74a4  commands/setup-web.md
+2a313b6033bda86c64dd2185db3e4f517899da8c  commands/validate-integration.md
 c2f68e788c0df993c4e6f6e81705c5fab80aa48b  contexts/godot-mode.md
-f9d0e2a75e6da91a64a0077401980fe7acf11c7c  contexts/roblox-mode.md
+411acafa94a97cb787075014ae48d696d0fc51f9  contexts/roblox-mode.md
 877ae173717a4056707875e530f4df797041ca2b  contexts/unity-mode.md
 4387d06c82c1d61253a2f3c4d68499a512ecb195  contexts/unreal-mode.md
 a6399d420e32e2333dbccadad34e7e9ee4430377  contexts/web-mode.md
@@ -53,7 +56,7 @@ a6399d420e32e2333dbccadad34e7e9ee4430377  contexts/web-mode.md
 326fb9a839005f7467552b3b2b7ac709d1e9f8ca  hooks/check-luau-types.js
 b0b57392d6f19e4c2e5be2283d8d2e420a37f83d  hooks/check-unity-conventions.js
 22d48b6b896070a71a6b5c87af4adea1c1a24941  hooks/check-unreal-conventions.js
-302805c036a7430d2e3e477dd2c82908a5b304b3  hooks/hooks.json
+9c3a3418de35b8ba08c2b0c2cfac84957f153cd5  hooks/hooks.json
 a749ed6648b6d9b4c300b583ae7d265a7b5a1d7f  rules/debugging-practices.md
 304983e5eb59255c321a5869b5124d25a175b902  rules/godot-style.md
 ac83676107816a3532b1069197c433512d464f7e  rules/javascript-style.md
@@ -78,6 +81,7 @@ b24c2e11fa98ad3f9aa3014f2a3187ae954f6f3e  skills/platformer-template/SKILL.md
 97e4cfbe569ef6133d60fe6e80e25fc4f7c7deaf  skills/puzzle-template/SKILL.md
 6b31f68c28f8cdf26a79d74479d025f5395ba648  skills/racing-template/SKILL.md
 bc11d82a41c9f895bfaed56f54b94b51b2302362  skills/roblox-patterns/SKILL.md
+dcd615407225222fa0bf8c8a798e4f699b27c2de  skills/roblox-toolchain/SKILL.md
 78065c00ec257989dab81504c4edd114f5ea2516  skills/roguelike-template/SKILL.md
 eb691eded161d1643670d2c5a82fa6624d7b47ea  skills/rpg-template/SKILL.md
 a0f7aa8d53bafb1035c76cee50b16a395479bdfd  skills/save-load-systems/SKILL.md
