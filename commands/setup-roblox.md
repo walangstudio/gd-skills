@@ -109,4 +109,22 @@ Done! Open in Roblox Studio and start building.
 
 ---
 
+## External Development Setup (Recommended for Teams)
+
+For multi-developer projects or open-source games, use the external toolchain instead of or alongside Studio-only development.
+
+Run `/setup-roblox-toolchain` to scaffold:
+
+```bash
+rokit install    # installs Rojo, Wally, Selene, StyLua, Lune, Zap
+wally install    # downloads package dependencies
+rojo serve       # start file sync — edit in VS Code, sync to Studio
+```
+
+This generates `rokit.toml`, `default.project.json`, `wally.toml`, `selene.toml`, `stylua.toml`, and a GitHub Actions CI workflow.
+
+See the `roblox-toolchain` skill for full documentation on Rokit, Rojo, Wally, Selene, StyLua, Darklua, Lune, and Zap.
+
+---
+
 **Set up your Roblox project!** Run `/setup-roblox` to get started.
