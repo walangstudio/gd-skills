@@ -104,12 +104,22 @@ The installer also supports Cursor, Windsurf, and GitHub Copilot (rules only):
 ./install.sh --list                # Show all supported targets
 ```
 
+### Check Install Status
+
+```bash
+./install.sh --status
+```
+
+Shows which targets (claude, cursor, windsurf, copilot) have gd-skills installed and the installed version for each.
+
 ### Upgrading
 
 Run the same install command again. The script will:
 - Skip if your installed version is already newer
 - Prompt before reinstalling the same version
 - Auto-upgrade from older to newer versions
+
+To upgrade, pull the latest source first (or re-download and extract), then run the installer again.
 
 ### Manual Installation
 ```bash
