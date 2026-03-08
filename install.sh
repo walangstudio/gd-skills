@@ -28,6 +28,7 @@ UNINSTALL=false
 TARGET="claude"
 LIST_TARGETS=false
 LOCAL=false
+STATUS=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -36,6 +37,7 @@ while [[ $# -gt 0 ]]; do
         -l|--local) LOCAL=true; shift ;;
         --target) TARGET="$2"; shift 2 ;;
         --list) LIST_TARGETS=true; shift ;;
+        --status) STATUS=true; shift ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -43,6 +45,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -l, --local       Install to current project (./.claude)"
             echo "  --target TARGET   Install target (default: claude)"
             echo "  --list            List supported targets"
+            echo "  --status          Show installation status for all targets"
             echo "  -f, --force       Force reinstall / downgrade"
             echo "  -u, --uninstall   Remove installed files"
             echo "  -h, --help        Show this help"
@@ -363,6 +366,41 @@ uninstall_for_target() {
     echo "  [$label] Uninstalled."
 }
 
+# --- Status ---
+show_status() {
+    local version="unknown"
+    if [ -f "$PLUGIN_JSON" ]; then
+        version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    fi
+
+    echo ""
+    echo "  gd-skills v$version — Status"
+    echo "  ─────────────────────────────────────────────────────────────────────────"
+    printf "  %-20s %-10s %s\n" "Target" "Installed" "Path"
+    echo "  ─────────────────────────────────────────────────────────────────────────"
+
+    local base="$HOME"
+    if [ "$LOCAL" = true ]; then
+        base="$(pwd)"
+    fi
+
+    for t in claude cursor windsurf copilot; do
+        local tdir
+        tdir=$(get_target_dir "$t")
+        local vfile="$tdir/$MARKER_FILE"
+        if [ -f "$vfile" ]; then
+            local iv
+            iv=$(cat "$vfile" | tr -d '[:space:]')
+            printf "  %-20s %-10s %s\n" "$t" "YES (v$iv)" "$tdir"
+        else
+            printf "  %-20s %s\n" "$t" "NO"
+        fi
+    done
+
+    echo "  ─────────────────────────────────────────────────────────────────────────"
+    echo ""
+}
+
 # --- Read source version ---
 if [ ! -f "$PLUGIN_JSON" ]; then
     echo "Error: plugin.json not found at $PLUGIN_JSON"
@@ -374,6 +412,12 @@ VERSION=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*"version"[[:space:]]*:[[:sp
 if [ -z "$VERSION" ]; then
     echo "Error: Could not read version from plugin.json"
     exit 1
+fi
+
+# --- Status ---
+if [ "$STATUS" = true ]; then
+    show_status
+    exit 0
 fi
 
 # --- List targets ---
@@ -400,6 +444,7 @@ else
 fi
 echo "  ─────────────────────────────"
 echo ""
+
 
 # --- Integrity check ---
 # Uses git hash-object for platform-independent hashing (handles CRLF/LF)
