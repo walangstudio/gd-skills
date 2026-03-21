@@ -79,12 +79,14 @@ chmod +x install.sh
 ./install.sh
 ```
 
-**Windows (PowerShell):**
-```powershell
+**Windows (Command Prompt or PowerShell):**
+```bat
 git clone https://github.com/ntancardoso/gd-skills.git
 cd gd-skills
-.\install.ps1
+install.bat
 ```
+
+No execution policy changes required — `install.bat` runs anywhere.
 
 ### Project-Local Install
 
@@ -92,7 +94,7 @@ Installs to `./.claude/` in your current project directory only:
 ```bash
 cd /path/to/my-game-project
 /path/to/gd-skills/install.sh --local        # bash
-/path/to/gd-skills/install.ps1 -Local        # PowerShell
+/path/to/gd-skills/install.bat -l            # Windows
 ```
 
 ### Other AI Coding Tools
@@ -101,16 +103,14 @@ The installer also supports Cursor, Windsurf, and GitHub Copilot (rules only):
 ```bash
 ./install.sh --target cursor       # Install rules for Cursor
 ./install.sh --target all          # Install for all supported tools
-./install.sh --list                # Show all supported targets
+./install.sh --list-targets        # Show all supported targets
 ```
 
-### Check Install Status
-
-```bash
-./install.sh --status
+```bat
+install.bat -t cursor              :: Windows
+install.bat -t all
+install.bat --list-targets
 ```
-
-Shows which targets (claude, cursor, windsurf, copilot) have gd-skills installed and the installed version for each.
 
 ### Upgrading
 
@@ -127,6 +127,13 @@ cp -r agents/* ~/.claude/agents/
 cp -r skills/* ~/.claude/skills/
 cp -r commands/* ~/.claude/commands/
 cp -r rules/* ~/.claude/rules/
+```
+
+```bat
+xcopy /e /i /y agents %USERPROFILE%\.claude\agents\
+xcopy /e /i /y skills %USERPROFILE%\.claude\skills\
+xcopy /e /i /y commands %USERPROFILE%\.claude\commands\
+xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 ```
 
 ## Quick Start
@@ -160,22 +167,24 @@ cp -r rules/* ~/.claude/rules/
 
 ### Debug and Polish
 ```bash
-/debug-game            # Route to specialized debugger
-/debug-existing        # Full project audit
-/add-game-feel         # Screen shake, particles, coyote time
-/optimize-performance  # Find and fix bottlenecks
+/debug-game             # Route to specialized debugger
+/debug-existing         # Full project audit
+/validate-integration   # Check cross-component wiring after assembly
+/add-game-feel          # Screen shake, particles, coyote time
+/optimize-performance   # Find and fix bottlenecks
 ```
 
 ### Engine Setup
 ```bash
-/setup-godot    # Godot project structure + autoloads
-/setup-unity    # Unity project structure + managers
-/setup-unreal   # Unreal project structure + framework
-/setup-roblox   # Roblox service hierarchy + DataStore
-/setup-web      # Web game with Vite + Phaser/Three.js
+/setup-godot              # Godot project structure + autoloads
+/setup-unity              # Unity project structure + managers
+/setup-unreal             # Unreal project structure + framework
+/setup-roblox             # Roblox service hierarchy + DataStore
+/setup-roblox-toolchain   # Rokit, Rojo, Wally, CI pipeline
+/setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 30 Commands
+## All 32 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -212,22 +221,24 @@ cp -r rules/* ~/.claude/rules/
 | `/add-game-feel` | Add juice and polish |
 | `/optimize-performance` | Performance optimization |
 
-### Debugging (2)
+### Debugging & Validation (3)
 | Command | Description |
 |---------|-------------|
 | `/debug-game` | Debug specific issue |
 | `/debug-existing` | Full project audit |
+| `/validate-integration` | Cross-component wiring check (events, references, data flow) |
 
-### Engine Setup (5)
+### Engine Setup (6)
 | Command | Description |
 |---------|-------------|
 | `/setup-godot` | Godot project structure |
 | `/setup-unity` | Unity project structure |
 | `/setup-unreal` | Unreal project structure |
 | `/setup-roblox` | Roblox Studio project structure |
+| `/setup-roblox-toolchain` | Roblox external toolchain (Rokit, Rojo, Wally, CI) |
 | `/setup-web` | Web game with Vite bundler |
 
-## All 15 Agents
+## All 16 Agents
 
 | Agent | Role |
 |-------|------|
@@ -246,8 +257,9 @@ cp -r rules/* ~/.claude/rules/
 | `genre-template-master` | Template-based game generation |
 | `game-architect` | Architecture and design |
 | `game-feel-specialist` | Juice and polish |
+| `integration-validator` | Cross-component wiring validation |
 
-## All 26 Skills
+## All 27 Skills
 
 ### Genre Templates (11)
 `platformer-template`, `fps-template`, `horror-template`, `rpg-template`, `survival-template`, `farming-template`, `racing-template`, `puzzle-template`, `tower-defense-template`, `classic-games-template`, `roguelike-template`
@@ -255,8 +267,8 @@ cp -r rules/* ~/.claude/rules/
 ### Shared Components (9)
 `player-controllers`, `enemy-ai-patterns`, `inventory-systems`, `combat-systems`, `save-load-systems`, `audio-systems`, `ui-menu-systems`, `camera-systems`, `dialogue-systems`
 
-### Engine Patterns (5)
-`godot-patterns`, `unity-patterns`, `unreal-patterns`, `roblox-patterns`, `javascript-patterns`
+### Engine Patterns (6)
+`godot-patterns`, `unity-patterns`, `unreal-patterns`, `roblox-patterns`, `roblox-toolchain`, `javascript-patterns`
 
 ### Other (1)
 `full-game-structure`
@@ -278,14 +290,15 @@ Coding standards automatically applied per engine:
 
 ```
 gd-skills/
-├── agents/     (15 specialized agents)
-├── skills/     (26 skills with code templates)
-├── commands/   (30 slash commands)
-├── rules/      (6 coding standards)
-├── hooks/      (automation)
-├── scripts/    (utilities)
-├── contexts/   (engine modes)
-└── examples/   (configurations)
+├── agents/           (16 specialized agents)
+├── skills/           (27 skills with code templates)
+├── commands/         (32 slash commands)
+├── rules/            (6 coding standards)
+├── hooks/            (automation)
+├── scripts/
+│   └── helpers/      (Node.js helpers used by install.bat)
+├── contexts/         (engine modes)
+└── examples/         (configurations)
 ```
 
 ## License
