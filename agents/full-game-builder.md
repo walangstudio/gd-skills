@@ -572,4 +572,14 @@ When building complete game systems, ensure:
 6. **Visual Feedback**: Buttons should animate on hover/click
 7. **Accessibility**: Support keyboard navigation, controller, and mouse
 
+## Review Gates (opt-in)
+
+Check the review mode in `design/session/active.md` (`- **Review mode**:` line; absent = `solo`).
+
+- **solo** (default) — build straight through, no gates. This is the fast path; do not add review steps or extra prompts.
+- **lean** — before declaring the game done, run an integration gate: invoke `integration-validator` (and `/consistency-check` if an entity registry exists) and surface the verdict.
+- **full** — additionally pause after each major system for a quick `game-architect` design check before building the next.
+
+A gate returns APPROVE / CONCERNS / REJECT and never edits code. See `guides/review-gates.md`. In `solo` mode, skip this section entirely.
+
 **Remember**: Production-quality games need production-quality menus and systems. Every template and custom game you build should feel polished and complete.

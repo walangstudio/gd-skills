@@ -351,6 +351,74 @@ void APlatformerCharacter::Landed(const FHitResult& Hit)
 }
 ```
 
+### Defold — Player Controller (2D Side-Scroller)
+```lua
+-- player.script — on a .go with a kinematic collision object "#collisionobject"
+go.property("move_speed", 600)
+go.property("jump_force", 800)
+go.property("double_jump_force", 700)
+go.property("gravity", -2400)
+go.property("can_double_jump", true)
+
+local MSG_CONTACT = hash("contact_point_response")
+
+function init(self)
+	self.velocity = vmath.vector3()
+	self.move = 0
+	self.on_ground = false
+	self.has_double_jump = true
+	self.correction = vmath.vector3()
+	msg.post(".", "acquire_input_focus")
+end
+
+function update(self, dt)
+	-- horizontal
+	self.velocity.x = self.move * self.move_speed
+	-- gravity
+	self.velocity.y = self.velocity.y + self.gravity * dt
+
+	self.correction = vmath.vector3()
+	self.on_ground = false
+	go.set_position(go.get_position() + self.velocity * dt)
+	self.move = 0
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_CONTACT then
+		-- resolve overlap so we don't sink into geometry
+		local proj = vmath.dot(self.correction, message.normal)
+		local comp = (message.distance - proj) * message.normal
+		self.correction = self.correction + comp
+		go.set_position(go.get_position() + comp)
+		-- landed if the contact normal points up
+		if message.normal.y > 0.7 then
+			self.on_ground = true
+			self.has_double_jump = true
+			if self.velocity.y < 0 then self.velocity.y = 0 end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("move_left") then
+		self.move = -action.value
+	elseif action_id == hash("move_right") then
+		self.move = action.value
+	elseif action_id == hash("jump") and action.pressed then
+		if self.on_ground then
+			self.velocity.y = self.jump_force
+		elseif self.can_double_jump and self.has_double_jump then
+			self.has_double_jump = false
+			self.velocity.y = self.double_jump_force
+		end
+	end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+```
+
 ### Coyote Time & Jump Buffer
 ```gdscript
 # Coyote time: Grace period after leaving platform

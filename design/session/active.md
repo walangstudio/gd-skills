@@ -11,6 +11,9 @@ file is the fallback that always works.
 - **Engine**: (godot | unity | unreal | roblox | defold | web)
 - **Game**: (one line — genre + what it is)
 - **Current milestone**: (what you're building right now)
+- **Review mode**: solo
+  <!-- solo (no gates, default) | lean (phase gates) | full (gate every step). Set with /review-gate. -->
+
 
 ## Done
 - (completed systems/features)

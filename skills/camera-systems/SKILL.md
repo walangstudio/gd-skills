@@ -96,6 +96,54 @@ public class FollowCamera2D : MonoBehaviour
 }
 ```
 
+### Defold
+
+A game object holds a `camera` component; the script acquires focus and moves the camera object toward the target each frame. Smoothing is a per-axis lerp; a dead zone skips small corrections. The active render script reads the focused camera's view/projection. Tunables go through `go.property`.
+
+```lua
+-- objects/follow_camera.script  (game object has a "#camera" component)
+go.property("smoothing_speed", 5.0)
+go.property("look_ahead_distance", 50.0)
+go.property("look_ahead_speed", 3.0)
+go.property("dead_zone_x", 20.0)
+go.property("dead_zone_y", 10.0)
+go.property("target", msg.url())   -- the followed object
+
+function init(self)
+	msg.post("#camera", "acquire_camera_focus")
+	self.look_ahead = vmath.vector3()
+end
+
+function update(self, dt)
+	-- look-ahead from the target's facing/velocity (sent via "set_velocity")
+	local desired = vmath.vector3(
+		(self.vel_x or 0) >= 0 and self.look_ahead_distance or -self.look_ahead_distance,
+		0, 0)
+	self.look_ahead = vmath.lerp(self.look_ahead_speed * dt, self.look_ahead, desired)
+
+	local target_pos = go.get_position(self.target) + self.look_ahead
+	local pos = go.get_position()
+
+	if math.abs(target_pos.x - pos.x) > self.dead_zone_x then
+		pos.x = vmath.lerp(self.smoothing_speed * dt, pos.x, target_pos.x)
+	end
+	if math.abs(target_pos.y - pos.y) > self.dead_zone_y then
+		pos.y = vmath.lerp(self.smoothing_speed * dt, pos.y, target_pos.y)
+	end
+	go.set_position(pos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_velocity") then
+		self.vel_x = message.x   -- player posts its horizontal velocity
+	end
+end
+
+function final(self)
+	msg.post("#camera", "release_camera_focus")
+end
+```
+
 ---
 
 ## Orbit Camera 3D
@@ -189,6 +237,64 @@ public class OrbitCamera3D : MonoBehaviour
 }
 ```
 
+### Defold
+
+The orbit rig is a game object with a child camera object offset back by `distance`. Mouse motion (delivered through `on_input` as a relative move action) drives yaw/pitch; the rig rotates and the camera looks at the target. Pitch is clamped; the wheel zooms the offset.
+
+```lua
+-- objects/orbit_camera.script  (child "/orbit/camera#camera")
+go.property("distance", 5.0)
+go.property("min_distance", 2.0)
+go.property("max_distance", 10.0)
+go.property("rotation_speed", 0.003)
+go.property("zoom_speed", 0.5)
+go.property("smoothing", 10.0)
+go.property("target", msg.url())
+
+local MIN_PITCH = math.rad(-80)
+local MAX_PITCH = math.rad(80)
+
+function init(self)
+	msg.post("camera#camera", "acquire_camera_focus")
+	msg.post(".", "acquire_input_focus")
+	self.yaw = 0
+	self.pitch = math.rad(-20)
+	self.cur_distance = self.distance
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("look") then
+		self.yaw = self.yaw - action.dx * self.rotation_speed
+		self.pitch = self.pitch - action.dy * self.rotation_speed
+		self.pitch = math.max(MIN_PITCH, math.min(MAX_PITCH, self.pitch))
+	elseif action_id == hash("zoom_in") and action.pressed then
+		self.distance = math.max(self.distance - self.zoom_speed, self.min_distance)
+	elseif action_id == hash("zoom_out") and action.pressed then
+		self.distance = math.min(self.distance + self.zoom_speed, self.max_distance)
+	end
+end
+
+function update(self, dt)
+	-- follow target position smoothly
+	local pos = vmath.lerp(self.smoothing * dt,
+		go.get_position(), go.get_position(self.target))
+	go.set_position(pos)
+
+	-- apply orbit rotation to the rig
+	local rot = vmath.quat_rotation_y(self.yaw) * vmath.quat_rotation_x(self.pitch)
+	go.set_rotation(rot)
+
+	-- pull the child camera back along local -Z by the (smoothed) distance
+	self.cur_distance = vmath.lerp(self.smoothing * dt, self.cur_distance, self.distance)
+	go.set_position(vmath.vector3(0, 0, self.cur_distance), "camera")
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+	msg.post("camera#camera", "release_camera_focus")
+end
+```
+
 ---
 
 ## Side-Scroll Camera
@@ -239,6 +345,66 @@ func set_bounds(min_pos: Vector2, max_pos: Vector2) -> void:
 	bounds_max = max_pos
 ```
 
+### Defold
+
+Horizontal-focused 2D follow with independent per-axis smoothing and a clamp to the level bounds. The "look down" hold is tracked with a `dt` timer. Bounds are set via a message from the level controller.
+
+```lua
+-- objects/side_scroll_camera.script  (has a "#camera" component)
+go.property("horizontal_smooth", 8.0)
+go.property("vertical_smooth", 5.0)
+go.property("vertical_offset", -50.0)
+go.property("look_down_distance", 100.0)
+go.property("look_down_threshold", 1.0)
+go.property("target", msg.url())
+
+function init(self)
+	msg.post("#camera", "acquire_camera_focus")
+	msg.post(".", "acquire_input_focus")
+	self.look_down_timer = 0
+	self.holding_down = false
+	self.on_floor = true
+	self.bounds_min = vmath.vector3(-math.huge, -math.huge, 0)
+	self.bounds_max = vmath.vector3(math.huge, math.huge, 0)
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("move_down") then
+		self.holding_down = action.pressed or action.repeated
+	end
+end
+
+function update(self, dt)
+	local target_pos = go.get_position(self.target)
+	target_pos.y = target_pos.y + self.vertical_offset
+
+	if self.holding_down and self.on_floor then
+		self.look_down_timer = self.look_down_timer + dt
+		if self.look_down_timer > self.look_down_threshold then
+			target_pos.y = target_pos.y + self.look_down_distance
+		end
+	else
+		self.look_down_timer = 0
+	end
+
+	local pos = go.get_position()
+	pos.x = vmath.lerp(self.horizontal_smooth * dt, pos.x, target_pos.x)
+	pos.y = vmath.lerp(self.vertical_smooth * dt, pos.y, target_pos.y)
+	pos.x = math.max(self.bounds_min.x, math.min(self.bounds_max.x, pos.x))
+	pos.y = math.max(self.bounds_min.y, math.min(self.bounds_max.y, pos.y))
+	go.set_position(pos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_bounds") then
+		self.bounds_min = message.min
+		self.bounds_max = message.max
+	elseif message_id == hash("set_on_floor") then
+		self.on_floor = message.value
+	end
+end
+```
+
 ---
 
 ## Chase Camera 3D
@@ -272,6 +438,41 @@ func _physics_process(delta: float) -> void:
 	var look_target: Vector3 = target.global_position + target_forward * look_ahead
 	var desired_transform := global_transform.looking_at(look_target, Vector3.UP)
 	global_transform = global_transform.interpolate_with(desired_transform, rotation_smooth * delta)
+```
+
+### Defold
+
+Position the camera object behind the target along its forward axis, lerp toward it, then orient the camera with a look-at quaternion built from the camera-to-target vector. The target's forward comes from rotating world -Z by the target's rotation.
+
+```lua
+-- objects/chase_camera.script  (has a "#camera" component)
+go.property("follow_distance", 8.0)
+go.property("follow_height", 3.0)
+go.property("look_ahead", 5.0)
+go.property("position_smooth", 5.0)
+go.property("rotation_smooth", 8.0)
+go.property("target", msg.url())
+
+local FORWARD = vmath.vector3(0, 0, -1)
+
+function init(self)
+	msg.post("#camera", "acquire_camera_focus")
+end
+
+function update(self, dt)
+	local target_pos = go.get_position(self.target)
+	local forward = vmath.rotate(go.get_rotation(self.target), FORWARD)
+
+	local desired = target_pos - forward * self.follow_distance
+	desired.y = target_pos.y + self.follow_height
+	go.set_position(vmath.lerp(self.position_smooth * dt, go.get_position(), desired))
+
+	-- look at a point ahead of the target
+	local look_target = target_pos + forward * self.look_ahead
+	local dir = vmath.normalize(look_target - go.get_position())
+	local desired_rot = vmath.quat_from_to(FORWARD, dir)
+	go.set_rotation(vmath.slerp(self.rotation_smooth * dt, go.get_rotation(), desired_rot))
+end
 ```
 
 ---
@@ -349,6 +550,50 @@ public class ScreenShake : MonoBehaviour
 
     public void AddTrauma(float amount) => trauma = Mathf.Min(trauma + amount, 1f);
 }
+```
+
+### Defold
+
+Shake lives on the camera object as an additive offset applied on top of the follow logic. Keep a base (followed) position and add a decaying random offset each frame; trauma falls off quadratically. Other objects request shake by posting `add_trauma`.
+
+```lua
+-- objects/screen_shake.script  (sits on the camera object)
+go.property("trauma_decay", 1.5)
+go.property("max_offset_x", 10.0)
+go.property("max_offset_y", 8.0)
+go.property("max_rotation", 2.0)
+
+function init(self)
+	self.trauma = 0
+	self.base_pos = go.get_position()
+end
+
+function update(self, dt)
+	-- record where the follow logic left us this frame, then shake around it
+	self.base_pos = go.get_position()
+	if self.trauma <= 0 then return end
+
+	self.trauma = math.max(self.trauma - self.trauma_decay * dt, 0)
+	local amount = self.trauma * self.trauma   -- quadratic falloff
+
+	local offset = vmath.vector3(
+		(math.random() * 2 - 1) * self.max_offset_x * amount,
+		(math.random() * 2 - 1) * self.max_offset_y * amount,
+		0)
+	go.set_position(self.base_pos + offset)
+
+	local angle = (math.random() * 2 - 1) * math.rad(self.max_rotation) * amount
+	go.set_rotation(vmath.quat_rotation_z(angle))
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_trauma") then
+		-- amount: 0.3 landing, 0.6 explosion, 1.0 boss hit
+		self.trauma = math.min(self.trauma + message.amount, 1.0)
+	end
+end
+
+-- usage:  msg.post("/camera#screen_shake", "add_trauma", { amount = 0.6 })
 ```
 
 ---

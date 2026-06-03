@@ -154,6 +154,65 @@ public class SaveManager : MonoBehaviour
 }
 ```
 
+### Defold
+
+`sys.save`/`sys.load` serialize a plain Lua table to the platform save directory. A different file name per slot gives slot management for free; `sys.load` returns `{}` when nothing is saved.
+
+```lua
+local SAVE_VERSION = 1
+
+local function slot_path(slot)
+	return sys.get_save_file("mygame", "save_" .. slot)
+end
+
+local function migrate_save(data)
+	-- example: if data._save_version == 0 then data.new_field = default end
+	data._save_version = SAVE_VERSION
+	return data
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("save_game") then
+		local data = message.data
+		data._save_version = SAVE_VERSION
+		data._timestamp = os.date("%Y-%m-%d %H:%M:%S")
+		data._playtime = data._playtime or 0.0
+
+		local ok = sys.save(slot_path(message.slot), data)
+		msg.post(sender, ok and "save_completed" or "save_failed", { slot = message.slot })
+
+	elseif message_id == hash("load_game") then
+		local data = sys.load(slot_path(message.slot))   -- {} if absent
+		if next(data) == nil then
+			msg.post(sender, "load_failed", { slot = message.slot })
+			return
+		end
+		if (data._save_version or 0) < SAVE_VERSION then
+			data = migrate_save(data)
+		end
+		msg.post(sender, "load_completed", { slot = message.slot, data = data })
+	end
+end
+```
+
+`sys.exists` checks a slot without loading it, and metadata is just the bookkeeping fields you wrote into the table:
+
+```lua
+local function has_save(slot)
+	return sys.exists(slot_path(slot))
+end
+
+local function save_metadata(slot)
+	if not sys.exists(slot_path(slot)) then return nil end
+	local data = sys.load(slot_path(slot))
+	return {
+		timestamp = data._timestamp or "Unknown",
+		playtime  = data._playtime or 0.0,
+		version   = data._save_version or 0,
+	}
+end
+```
+
 ---
 
 ## Settings Persistence
@@ -271,6 +330,58 @@ public class SettingsManager : MonoBehaviour
 }
 ```
 
+### Defold
+
+Settings are just another saved table, kept separate from game saves. Apply them by posting to the audio/window controllers rather than reaching into them.
+
+```lua
+local function settings_path()
+	return sys.get_save_file("mygame", "settings")
+end
+
+local DEFAULTS = {
+	master_volume = 1.0,
+	music_volume  = 0.8,
+	sfx_volume    = 1.0,
+	fullscreen    = false,
+	vsync         = true,
+	language      = "en",
+}
+
+local function load_settings()
+	local data = sys.load(settings_path())
+	if next(data) == nil then
+		data = {}
+		for k, v in pairs(DEFAULTS) do data[k] = v end
+		sys.save(settings_path(), data)
+	end
+	return data
+end
+
+local function apply(self)
+	-- audio mixer groups are addressed by their group name
+	sound.set_group_gain(hash("master"), self.settings.master_volume)
+	sound.set_group_gain(hash("music"),  self.settings.music_volume)
+	sound.set_group_gain(hash("sfx"),    self.settings.sfx_volume)
+	msg.post("@system:", "set_vsync", { swap_interval = self.settings.vsync and 1 or 0 })
+end
+
+function init(self)
+	self.settings = load_settings()
+	apply(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_setting") then
+		self.settings[message.key] = message.value
+		sys.save(settings_path(), self.settings)
+		apply(self)
+	elseif message_id == hash("get_setting") then
+		msg.post(sender, "setting_value", { key = message.key, value = self.settings[message.key] })
+	end
+end
+```
+
 ---
 
 ## Autosave System
@@ -314,6 +425,41 @@ func perform_autosave() -> void:
 	# Caller should connect this signal and call SaveManager.save_game(slot, data)
 ```
 
+### Defold
+
+Accumulate `dt` in `update`; only count time while the game is dirty. Rotate through a few dedicated slots so a corrupt write never clobbers the only autosave.
+
+```lua
+go.property("autosave_interval", 300.0)   -- 5 minutes
+go.property("autosave_slot", 99)
+go.property("max_autosaves", 3)
+
+function init(self)
+	self.timer = 0.0
+	self.is_dirty = false
+	self.rotation = 0
+end
+
+function update(self, dt)
+	if not self.is_dirty then return end
+	self.timer = self.timer + dt
+	if self.timer >= self.autosave_interval then
+		self.timer = 0.0
+		self.is_dirty = false
+		local slot = self.autosave_slot + self.rotation
+		self.rotation = (self.rotation + 1) % self.max_autosaves
+		-- ask the save manager to persist the current snapshot into this slot
+		msg.post("/save#manager", "save_game", { slot = slot })
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("mark_dirty") then
+		self.is_dirty = true
+	end
+end
+```
+
 ---
 
 ## Save Slot Manager
@@ -354,6 +500,61 @@ func format_playtime(seconds: float) -> String:
 	var hours: int = int(seconds) / 3600
 	var minutes: int = (int(seconds) % 3600) / 60
 	return "%dh %02dm" % [hours, minutes]
+```
+
+### Defold
+
+Iterate the known slot range, probing each with `sys.exists` and reading the metadata fields. Pure table work, so it lives in a `require`'d module any script can call.
+
+```lua
+-- scripts/save_slots.lua
+local M = {}
+
+M.MAX_SLOTS = 5
+
+local function slot_path(slot)
+	return sys.get_save_file("mygame", "save_" .. slot)
+end
+
+function M.get_all_slots()
+	local slots = {}
+	for i = 0, M.MAX_SLOTS - 1 do
+		if sys.exists(slot_path(i)) then
+			local data = sys.load(slot_path(i))
+			slots[#slots + 1] = {
+				slot = i,
+				exists = true,
+				timestamp = data._timestamp or "Unknown",
+				playtime = data._playtime or 0.0,
+			}
+		else
+			slots[#slots + 1] = { slot = i, exists = false }
+		end
+	end
+	return slots
+end
+
+function M.get_newest_slot()
+	local newest_slot, newest_time = -1, ""
+	for i = 0, M.MAX_SLOTS - 1 do
+		if sys.exists(slot_path(i)) then
+			local ts = sys.load(slot_path(i))._timestamp or ""
+			if ts > newest_time then
+				newest_time = ts
+				newest_slot = i
+			end
+		end
+	end
+	return newest_slot
+end
+
+function M.format_playtime(seconds)
+	local hours = math.floor(seconds / 3600)
+	local minutes = math.floor((seconds % 3600) / 60)
+	return string.format("%dh %02dm", hours, minutes)
+end
+
+return M
 ```
 
 ---
