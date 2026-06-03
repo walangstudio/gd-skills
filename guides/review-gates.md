@@ -57,4 +57,5 @@ Gates are a tool for confidence on real projects, not a tax on every action.
 
 ## Related
 - `/review-gate` sets or shows the mode.
+- `guides/verification-driven-dev.md` + `/acceptance` — in lean/full, systems get testable acceptance criteria before they're built.
 - `guides/data-driven.md` and the entity registry back the integration gate's consistency check.

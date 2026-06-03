@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **17 specialized agents**, **28 skills**, and **37 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **38 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
 
 ### Create a Full Game in Seconds
 
@@ -43,12 +43,13 @@ Create complete, playable games instantly:
 - **Defold 1.9+** (Lua, collection/GameObject/component model, Box2D)
 - **JavaScript** (Phaser 3.80+, Three.js, Babylon.js)
 
-### 17 Specialized Agents
+### 20 Specialized Agents
 - **Engine specialists** (6): Godot, Roblox, Unity, Unreal, Defold, JavaScript
 - **Debuggers** (5): Performance, Physics, AI, Audio, Network
 - **Builders** (3): Full game, Component, Genre template
 - **Polish** (2): Game architect, Game feel specialist
 - **Validation** (1): Integration validator (cross-component wiring checks)
+- **Disciplines** (3): Narrative designer, Accessibility specialist, Security engineer
 
 ### 9 Shared Component Skills
 Reusable game systems **shared across all genre templates** — every template references these instead of duplicating patterns:
@@ -242,14 +243,15 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/setup-defold` | Defold project structure + bootstrap collection |
 | `/setup-web` | Web game with Vite bundler |
 
-### Workflow (3)
+### Workflow (4)
 | Command | Description |
 |---------|-------------|
 | `/checkpoint` | Update the session checkpoint (`design/session/active.md`) after a milestone |
 | `/review-gate` | Show/set review mode (solo/lean/full) for opt-in phase sign-offs |
 | `/build-team` | Align architect + engine + feel + integration on one system in a coordinated pass |
+| `/acceptance` | Generate Given/When/Then acceptance criteria + failing test stubs for a feature |
 
-## All 17 Agents
+## All 20 Agents
 
 | Agent | Role |
 |-------|------|
@@ -270,6 +272,9 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `game-architect` | Architecture and design |
 | `game-feel-specialist` | Juice and polish |
 | `integration-validator` | Cross-component wiring validation |
+| `narrative-designer` | Story, lore, dialogue structure, characters |
+| `accessibility-specialist` | Remappable controls, colorblind-safe, captions, assists |
+| `security-engineer` | Server authority, save-tamper, anti-cheat (online games) |
 
 ## All 28 Skills
 
@@ -328,6 +333,8 @@ Beyond fast generation, gd-skills ships reference material agents consult on dem
 - **Opt-in review gates + `/review-gate`** (`guides/review-gates.md`) — solo (default, no gates) / lean / full. Builders only pause for architect/validator sign-off in lean or full, so the generator stays fast.
 - **Team orchestration + `/build-team`** — aligns architect, engine specialist, game-feel, and integration on one system in a single coordinated pass.
 - **Doc templates** (`docs/templates/`) — GDD, ADR, technical design, content plan, milestone plan, playtest report.
+- **Prompt cookbook** (`guides/prompt-cookbook.md`) — curated, copy-paste prompts per genre/system/engine that actually land.
+- **Verification-driven dev + `/acceptance`** (`guides/verification-driven-dev.md`) — testable Given/When/Then criteria + per-engine failing test stubs; active in lean/full review mode.
 
 ## License
 
