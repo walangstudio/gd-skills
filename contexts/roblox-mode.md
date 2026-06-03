@@ -44,3 +44,4 @@ game/
 - `roblox-toolchain` for external dev workflow (Rokit, Rojo, Wally, Selene, StyLua, Lune, Zap)
 - `roblox-style` rule for coding standards
 - `roblox-specialist` agent for complex issues
+- `docs/engine-reference/roblox/` for version-pinned API reference

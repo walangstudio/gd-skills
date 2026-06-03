@@ -50,3 +50,4 @@ project/
 - `javascript-patterns` for web game patterns
 - `javascript-style` rule for coding standards
 - `javascript-specialist` agent for complex issues
+- `docs/engine-reference/web/` for version-pinned API reference

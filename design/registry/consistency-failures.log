@@ -1,0 +1,9 @@
+# gd-skills consistency-failures log
+#
+# Append-only record of mismatches found by /consistency-check.
+# One entry per line:
+#   <ISO8601 timestamp> | <severity> | <entity_id> | <file> | <message>
+# severity ∈ { error, warn, info }
+#
+# Example (remove when you log real entries):
+# 2026-06-03T12:00:00Z | error | goblin | scripts/enemies/goblin.gd | health=20 but registry says 30

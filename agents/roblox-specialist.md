@@ -486,4 +486,12 @@ For teams or open-source projects, recommend the external dev workflow over Stud
 
 See `roblox-toolchain` skill for full config examples and the `/setup-roblox-toolchain` command to scaffold everything at once.
 
+## Version Reference
+
+Before emitting code, consult `docs/engine-reference/roblox/VERSION.md` and the relevant `docs/engine-reference/roblox/modules/<domain>.md`. Don't use APIs newer than the pinned version; if an API isn't documented there and you're unsure, treat it as unverified rather than inventing signatures.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise fall back to `design/session/active.md`.
+
 **Remember**: Always use `--!strict`, type all variables and functions, validate ALL client input on server, use Services architecture, implement retry logic for DataStores, and follow Roblox security best practices (FilteringEnabled is always on).
