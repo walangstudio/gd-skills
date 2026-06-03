@@ -61,6 +61,56 @@ func advance_patrol() -> void:
     waiting = false
 ```
 
+### Defold
+```lua
+-- patrol_enemy.script. Waypoints are passed in as a table of vector3 positions
+-- (e.g. set from the spawning controller, or via go.property urls resolved in init).
+go.property("move_speed", 3.0)
+go.property("wait_time", 2.0)
+go.property("arrive_radius", 0.2)
+
+function init(self)
+	self.points = {}        -- fill with vmath.vector3 waypoints
+	self.current = 1
+	self.wait_left = 0
+end
+
+local function set_points(self, points)
+	self.points = points
+	self.current = 1
+end
+
+function update(self, dt)
+	if #self.points == 0 then return end
+
+	if self.wait_left > 0 then
+		self.wait_left = self.wait_left - dt
+		return
+	end
+
+	local pos = go.get_position()
+	local target = self.points[self.current]
+	local to = target - pos
+	to.y = 0
+
+	if vmath.length(to) <= self.arrive_radius then
+		self.wait_left = self.wait_time
+		self.current = (self.current % #self.points) + 1
+		return
+	end
+
+	local dir = vmath.normalize(to)
+	go.set_position(pos + dir * self.move_speed * dt)
+	go.set_rotation(vmath.quat_rotation_y(math.atan2(dir.x, dir.z)))
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_patrol") then
+		set_points(self, message.points)
+	end
+end
+```
+
 ---
 
 ## Chase AI
@@ -124,6 +174,50 @@ func attack() -> void:
     can_attack = true
 ```
 
+### Defold
+```lua
+-- chase_enemy.script. The player reports its position to the enemy, or the enemy
+-- reads a shared target url; here we track the latest known player position via a
+-- message the player broadcasts (no reaching into the player's self).
+go.property("move_speed", 4.0)
+go.property("detection_range", 15.0)
+go.property("attack_range", 2.0)
+go.property("attack_damage", 10)
+go.property("attack_cooldown", 1.0)
+go.property("target", msg.url())     -- the player object
+
+function init(self)
+	self.cooldown_left = 0
+end
+
+function update(self, dt)
+	if self.cooldown_left > 0 then
+		self.cooldown_left = self.cooldown_left - dt
+	end
+
+	local pos = go.get_position()
+	local tpos = go.get_position(self.target)
+	local to = tpos - pos
+	to.y = 0
+	local distance = vmath.length(to)
+
+	if distance > self.detection_range then
+		return                       -- idle / hand back to patrol
+	end
+
+	if distance <= self.attack_range then
+		if self.cooldown_left <= 0 then
+			msg.post(self.target, "take_damage", { amount = self.attack_damage })
+			self.cooldown_left = self.attack_cooldown
+		end
+	else
+		local dir = vmath.normalize(to)
+		go.set_position(pos + dir * self.move_speed * dt)
+		go.set_rotation(vmath.quat_rotation_y(math.atan2(dir.x, dir.z)))
+	end
+end
+```
+
 ---
 
 ## Ranged AI
@@ -184,6 +278,61 @@ func shoot() -> void:
 
     await get_tree().create_timer(fire_rate).timeout
     can_shoot = true
+```
+
+### Defold
+```lua
+-- ranged_enemy.script. Spawns projectiles from a factory "#projectilefactory"
+-- on a "#muzzle" child object. Line-of-sight uses a physics ray cast.
+go.property("fire_rate", 1.5)
+go.property("attack_range", 15.0)
+go.property("min_range", 5.0)        -- backs away if closer
+go.property("backaway_speed", 3.0)
+go.property("target", msg.url())
+
+local RAY_GROUPS = { hash("wall"), hash("player") }
+
+function init(self)
+	self.cooldown_left = 0
+	self.has_los = false
+end
+
+local function request_los(self, from, to)
+	-- async ray cast; result arrives in on_message next frame
+	physics.raycast_async(from, to, RAY_GROUPS)
+end
+
+function update(self, dt)
+	if self.cooldown_left > 0 then self.cooldown_left = self.cooldown_left - dt end
+
+	local pos = go.get_position()
+	local tpos = go.get_position(self.target)
+	local to = tpos - pos
+	to.y = 0
+	local distance = vmath.length(to)
+	go.set_rotation(vmath.quat_rotation_y(math.atan2(to.x, to.z)))
+
+	if distance < self.min_range then
+		local away = vmath.normalize(pos - tpos)
+		away.y = 0
+		go.set_position(pos + away * self.backaway_speed * dt)
+	elseif distance <= self.attack_range and self.has_los and self.cooldown_left <= 0 then
+		local muzzle_pos = go.get_position("#muzzle")
+		factory.create("#projectilefactory", muzzle_pos, go.get_rotation(), { target = self.target })
+		self.cooldown_left = self.fire_rate
+	end
+
+	request_los(self, pos, tpos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("ray_cast_response") then
+		-- first hit is the player => clear line of sight
+		self.has_los = message.group == hash("player")
+	elseif message_id == hash("ray_cast_missed") then
+		self.has_los = true   -- nothing in the way
+	end
+end
 ```
 
 ---
@@ -264,6 +413,76 @@ func die() -> void:
     queue_free()
 ```
 
+### Defold
+```lua
+-- boss.script. Phases drive attack selection on a repeating timer.
+-- A controller listens for "boss_defeated" to run the win sequence.
+go.property("max_health", 500)
+go.property("attack_interval", 2.0)
+go.property("controller", msg.url())
+
+local PHASE_THRESHOLDS = { 0.66, 0.33 }   -- health fractions for phase 2 / 3
+
+function init(self)
+	self.health = self.max_health
+	self.phase = 1
+	self.interval = self.attack_interval
+	self.timer = self.interval
+	self.dead = false
+end
+
+local function basic_attack(self) end     -- implement per boss
+local function special_attack(self) end
+local function rage_attack(self) end
+
+local function transition(self, new_phase)
+	self.phase = new_phase
+	if new_phase == 2 then
+		self.interval = self.attack_interval * 0.7
+	elseif new_phase == 3 then
+		self.interval = self.attack_interval * 0.5
+	end
+	msg.post(self.controller, "boss_phase_changed", { phase = new_phase })
+end
+
+local function check_phase(self)
+	local frac = self.health / self.max_health
+	if self.phase == 1 and frac <= PHASE_THRESHOLDS[1] then
+		transition(self, 2)
+	elseif self.phase == 2 and frac <= PHASE_THRESHOLDS[2] then
+		transition(self, 3)
+	end
+end
+
+function update(self, dt)
+	if self.dead then return end
+	self.timer = self.timer - dt
+	if self.timer <= 0 then
+		self.timer = self.interval
+		if self.phase == 1 then
+			basic_attack(self)
+		elseif self.phase == 2 then
+			if math.random() > 0.5 then special_attack(self) else basic_attack(self) end
+		else
+			rage_attack(self)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("take_damage") then
+		if self.dead then return end
+		self.health = self.health - message.amount
+		check_phase(self)
+		if self.health <= 0 then
+			self.dead = true
+			msg.post(self.controller, "boss_defeated", { id = go.get_id() })
+			go.delete()
+		end
+	end
+end
+```
+
 ---
 
 ## Horde/Swarm AI
@@ -307,6 +526,51 @@ func _physics_process(delta: float) -> void:
     velocity.y -= 9.8 * delta
 
     move_and_slide()
+```
+
+### Defold
+```lua
+-- horde_enemy.script. Separation reads neighbour positions from a snapshot the
+-- horde controller broadcasts each frame (so no enemy reaches into another's self).
+-- The controller collects positions and posts "neighbours" = { vector3, ... }.
+go.property("move_speed", 5.0)
+go.property("separation_distance", 1.5)
+go.property("damage", 5)
+go.property("target", msg.url())
+
+function init(self)
+	self.neighbours = {}
+end
+
+function update(self, dt)
+	local pos = go.get_position()
+	local tpos = go.get_position(self.target)
+	local to_target = vmath.normalize(tpos - pos)
+
+	-- separation from nearby horde members
+	local separation = vmath.vector3()
+	for _, npos in ipairs(self.neighbours) do
+		local away = pos - npos
+		local d = vmath.length(away)
+		if d > 0 and d < self.separation_distance then
+			separation = separation + vmath.normalize(away)
+		end
+	end
+
+	local dir = to_target + separation * 0.3
+	if vmath.length_sqr(dir) > 0 then dir = vmath.normalize(dir) end
+	go.set_position(pos + dir * self.move_speed * dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("neighbours") then
+		self.neighbours = message.positions
+	elseif message_id == hash("collision_response") then
+		if message.other_group == hash("player") then
+			msg.post(self.target, "take_damage", { amount = self.damage })
+		end
+	end
+end
 ```
 
 ---

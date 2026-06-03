@@ -280,4 +280,13 @@ Always provide:
 - Document all public APIs
 - Include example usage
 
+## Review Gates (opt-in)
+
+Check the review mode in `design/session/active.md` (`- **Review mode**:` line; absent = `solo`).
+
+- **solo** (default) — build the component straight through. No gates, no extra prompts.
+- **lean / full** — after the component is wired, run an integration gate via `integration-validator` (and `/consistency-check` if the component uses registry-defined stats) and surface the APPROVE / CONCERNS / REJECT verdict.
+
+A gate never edits code. See `guides/review-gates.md`. In `solo` mode, skip this section entirely.
+
 **Remember**: Build components that work across different game types, follow engine conventions, and are easy to customize.

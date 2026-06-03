@@ -224,6 +224,58 @@ public class AudioManager : MonoBehaviour
 }
 ```
 
+### Defold
+
+There is no singleton class — make one game object (`/audio`) the audio controller and post messages to it. It owns two `sound` components for crossfade music and a row of `sound` components used as a round-robin SFX pool. Per-clip gain/pan ride along on the `play_sound` message.
+
+```lua
+-- audio.script  -- attach to a single /audio game object
+-- components on this object:  #music_a  #music_b  #sfx_0 .. #sfx_15
+
+go.property("fade_duration", 1.0)
+
+local SFX_COUNT = 16
+
+function init(self)
+	self.active = "#music_a"
+	self.idle   = "#music_b"
+	self.sfx_index = 0
+	sound.set_gain(self.idle, 0)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("play_music") then
+		-- crossfade: fade the active out, the idle in, then swap roles
+		local from, to = self.active, self.idle
+		sound.set_gain(to, 0)
+		sound.play(to, { gain = 0 })   -- the clip is set on the component in the editor
+		go.animate(from, "gain", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, self.fade_duration)
+		go.animate(to,   "gain", go.PLAYBACK_ONCE_FORWARD, message.gain or 1.0, go.EASING_LINEAR, self.fade_duration)
+		self.active, self.idle = to, from
+
+	elseif message_id == hash("stop_music") then
+		local active = self.active
+		go.animate(active, "gain", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, self.fade_duration,
+			0, function() sound.stop(active) end)
+
+	elseif message_id == hash("play_sfx") then
+		-- round-robin across the pool so overlapping sounds don't cut each other
+		local comp = "#sfx_" .. self.sfx_index
+		self.sfx_index = (self.sfx_index + 1) % SFX_COUNT
+		local pitch = 1.0
+		if message.pitch_variation then
+			pitch = 1.0 + (math.random() * 2 - 1) * message.pitch_variation
+		end
+		sound.play(comp, { gain = message.gain or 1.0, pan = message.pan or 0, speed = pitch })
+
+	elseif message_id == hash("set_group_gain") then
+		sound.set_group_gain(message.group, message.gain)   -- group = hash("music") etc.
+	end
+end
+```
+
+Drive it from gameplay with `msg.post("/audio#script", "play_sfx", { gain = 0.8, pitch_variation = 0.1 })`.
+
 ---
 
 ## Spatial Audio (3D)
@@ -277,6 +329,53 @@ func _on_body_exited(body: Node3D) -> void:
 
 ---
 
+### Defold
+
+Spatial audio is a `sound` component on a positioned game object: Defold attenuates by the distance between the sound's game object and the listener automatically. A footstep emitter plays its own sound; an ambient zone is a trigger collision object that fades a looping sound as the player enters and exits.
+
+```lua
+-- spatial_sfx.script  -- on a game object that carries a #sound component
+go.property("pitch_variation", 0.05)
+go.property("auto_play", false)
+
+local function play_sound(self)
+	local pitch = 1.0 + (math.random() * 2 - 1) * self.pitch_variation
+	sound.play("#sound", { speed = pitch })   -- position comes from this object's transform
+end
+
+function init(self)
+	if self.auto_play then play_sound(self) end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("play") then
+		play_sound(self)
+	end
+end
+```
+
+```lua
+-- ambient_zone.script  -- on a game object with a #trigger collision object + #ambient sound
+go.property("gain", 0.4)
+go.property("fade", 1.0)
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		if message.other_group == hash("player") then
+			if message.enter then
+				sound.play("#ambient", { gain = 0 })
+				go.animate("#ambient", "gain", go.PLAYBACK_ONCE_FORWARD, self.gain, go.EASING_LINEAR, self.fade)
+			else
+				go.animate("#ambient", "gain", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, self.fade,
+					0, function() sound.stop("#ambient") end)
+			end
+		end
+	end
+end
+```
+
+---
+
 ## Audio Bus Layout
 
 Recommended bus hierarchy for all games:
@@ -303,6 +402,9 @@ Create this in `default_bus_layout.tres` or via Project Settings → Audio → B
 
 ### Unity Setup
 Create an `AudioMixer` asset with groups matching this hierarchy. Expose volume parameters for settings UI.
+
+### Defold Setup
+Defold's mixer is flat: every `sound` component names a **group** (set in the component or in `game.project` under `sound.max_sound_data`). Create groups `master`, `music`, `sfx`, `ambient`, `voice` and set each component's group accordingly. Adjust them at runtime with `sound.set_group_gain(hash("music"), gain)` and read back with `sound.get_group_gain(hash("music"))`. Nesting (BGM under Music) is convention only — fold sub-categories into the parent group and vary per-clip gain on the `play_sound` message.
 
 ---
 
@@ -343,6 +445,54 @@ func exit_combat() -> void:
 
 func enter_boss() -> void:
 	change_state(MusicState.BOSS)
+```
+
+### Defold
+
+Hold a state-to-clip map in a `require`'d module and tell the `/audio` controller to crossfade when the state changes. Game state lives in one place; the audio object only knows how to play music.
+
+```lua
+-- scripts/music_states.lua
+local M = {}
+
+M.tracks = {
+	menu        = "menu.ogg",
+	exploration = "explore.ogg",
+	combat      = "combat.ogg",
+	boss        = "boss.ogg",
+	victory     = "victory.ogg",
+	game_over   = "game_over.ogg",
+}
+
+return M
+
+-- dynamic_music.script
+local music_states = require("scripts.music_states")
+
+function init(self)
+	self.state = "menu"
+end
+
+local function change_state(self, new_state)
+	if new_state == self.state then return end
+	self.state = new_state
+	local track = music_states.tracks[new_state]
+	if track then
+		msg.post("/audio#script", "play_music", { track = track })
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("enter_combat") then
+		change_state(self, "combat")
+	elseif message_id == hash("exit_combat") then
+		change_state(self, "exploration")
+	elseif message_id == hash("enter_boss") then
+		change_state(self, "boss")
+	elseif message_id == hash("set_music_state") then
+		change_state(self, message.state)
+	end
+end
 ```
 
 ---

@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **17 specialized agents**, **28 skills**, and **35 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **17 specialized agents**, **28 skills**, and **37 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
 
 ### Create a Full Game in Seconds
 
@@ -186,7 +186,7 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 /setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 35 Commands
+## All 37 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -242,10 +242,12 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/setup-defold` | Defold project structure + bootstrap collection |
 | `/setup-web` | Web game with Vite bundler |
 
-### Workflow (1)
+### Workflow (3)
 | Command | Description |
 |---------|-------------|
 | `/checkpoint` | Update the session checkpoint (`design/session/active.md`) after a milestone |
+| `/review-gate` | Show/set review mode (solo/lean/full) for opt-in phase sign-offs |
+| `/build-team` | Align architect + engine + feel + integration on one system in a coordinated pass |
 
 ## All 17 Agents
 
@@ -323,6 +325,9 @@ Beyond fast generation, gd-skills ships reference material agents consult on dem
 - **Architecture guides** (`guides/`) — distilled pattern guides (message passing, ECS vs component, game loop/timestep, object pooling, event bus, data-driven design, state machines, behavior trees) with per-engine mappings.
 - **Entity registry + `/consistency-check`** (`design/registry/`) — a single source of truth for cross-system facts (enemy stats, item costs, formulas); the command flags code/docs that disagree.
 - **Session-state + `/checkpoint`** (`design/session/active.md`) — a portable checkpoint surfaced at session start; optionally backed by a mememo MCP for persistent agent memory.
+- **Opt-in review gates + `/review-gate`** (`guides/review-gates.md`) — solo (default, no gates) / lean / full. Builders only pause for architect/validator sign-off in lean or full, so the generator stays fast.
+- **Team orchestration + `/build-team`** — aligns architect, engine specialist, game-feel, and integration on one system in a single coordinated pass.
+- **Doc templates** (`docs/templates/`) — GDD, ADR, technical design, content plan, milestone plan, playtest report.
 
 ## License
 
