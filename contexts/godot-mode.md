@@ -43,3 +43,4 @@ project/
 - `godot-patterns` for engine-specific patterns
 - `godot-style` rule for coding standards
 - `godot-specialist` agent for complex issues
+- `docs/engine-reference/godot/` for version-pinned API reference

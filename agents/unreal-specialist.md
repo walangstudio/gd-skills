@@ -465,4 +465,12 @@ void LoadGame()
 }
 ```
 
+## Version Reference
+
+Before emitting code, consult `docs/engine-reference/unreal/VERSION.md` and the relevant `docs/engine-reference/unreal/modules/<domain>.md`. Don't use APIs newer than the pinned version; if an API isn't documented there and you're unsure, treat it as unverified rather than inventing signatures.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise fall back to `design/session/active.md`.
+
 **Remember**: Use Unreal Engine 5.4+ features, follow naming conventions (U/A/F prefixes), use UPROPERTY/UFUNCTION macros for Blueprint exposure, leverage Enhanced Input System, and utilize Nanite/Lumen for modern rendering.

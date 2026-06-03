@@ -142,6 +142,17 @@ Produce a structured report:
 After fixing FAIL items, re-run `/validate-integration` to confirm.
 ```
 
+## Registry Consistency
+
+When `design/registry/entities.yaml` exists, also verify the project's numbers against it (this backs the `/consistency-check` command):
+
+- For each entity / item / formula, read the files in its `source_files` and extract the numeric facts (health, damage, speed, armor, item values, formula expressions).
+- Compare against the registry: **PASS** if they agree, **FAIL** if a value contradicts the registry, **WARN** if a registry value can't be found in any source file.
+- This is **read-and-report only** — propose fixes, never edit. Offer to update either the code or the registry, since the registry might be the thing that's stale.
+- Append every WARN/FAIL to `design/registry/consistency-failures.log` as `<ISO8601> | <severity> | <entity_id> | <file> | <message>`.
+
+This catches cross-system drift (e.g. Combat balanced for 30 HP, Loot table balanced for 20) that pure wiring checks miss.
+
 ## Severity Definitions
 
 - **PASS** — integration point wired correctly, no action needed

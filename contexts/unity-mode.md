@@ -46,3 +46,4 @@ Assets/
 - `unity-patterns` for engine-specific patterns
 - `unity-style` rule for coding standards
 - `unity-specialist` agent for complex issues
+- `docs/engine-reference/unity/` for version-pinned API reference

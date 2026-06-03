@@ -34,6 +34,7 @@ Use AskUserQuestion to gather essential details:
 - Roblox (best for multiplayer social games)
 - Unity (best for cross-platform 3D games)
 - Unreal (best for high-fidelity 3D games)
+- Defold (best for lightweight 2D, mobile/web, message-driven design)
 - Web/JavaScript (best for browser games)
 
 **Game Structure**:
@@ -490,5 +491,22 @@ If user request is impossible:
 4. **Delegate appropriately** - Use specialized agents
 5. **Verify integration** - Test all systems work together
 6. **Provide next steps** - Tell user how to test/play/iterate
+
+## Pattern Guides
+
+When choosing how systems communicate and run, consult the distilled architecture guides in `guides/` before committing to a design. They map each pattern across all six engines and call out when the simple path is better:
+
+- `guides/message-passing.md`, `guides/event-bus.md` — decoupled communication
+- `guides/ecs-vs-component.md` — composition vs inheritance vs ECS
+- `guides/game-loop-timestep.md` — fixed vs variable timestep, delta time
+- `guides/state-machines.md`, `guides/behavior-trees.md` — game/AI state
+- `guides/object-pooling.md` — spawn-heavy performance
+- `guides/data-driven.md` — config-over-code; ties to the entity registry (`design/registry/entities.yaml`)
+
+Don't over-engineer: each guide has a "When NOT to use it" section. Prefer the smallest design that fits.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist architecture decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise record them in `design/session/active.md` (update via `/checkpoint`).
 
 **Remember**: Your goal is to transform any game idea into a complete, playable reality. Ask questions, use templates wisely, delegate to specialists, and deliver production-quality games.

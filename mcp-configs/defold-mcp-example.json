@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "_comment": "Example MCP config for Defold Engine integration. This is a template - you need to install a compatible Defold MCP server first. Defold MCP tooling is community-driven and evolving.",
+  "mcpServers": {
+    "defold": {
+      "command": "npx",
+      "args": ["defold-mcp-server"],
+      "env": {
+        "DEFOLD_PATH": "/path/to/defold",
+        "PROJECT_PATH": "/path/to/your/defold/project"
+      }
+    }
+  },
+  "_tools_provided": [
+    "defold_build - Build and run the project (bob.jar / editor)",
+    "defold_get_collection - Read a .collection tree",
+    "defold_edit_script - Create or edit a .script / .lua file",
+    "defold_run - Launch the project and capture output",
+    "defold_get_errors - Read build/runtime error log"
+  ],
+  "_setup_instructions": [
+    "1. Install a Defold MCP server (community, e.g. defold-mcp-server)",
+    "2. Set DEFOLD_PATH to your Defold editor / bob.jar location",
+    "3. Set PROJECT_PATH to your Defold project root (the folder with game.project)",
+    "4. Add this config to your Claude Code MCP settings",
+    "5. Restart Claude Code"
+  ]
+}
