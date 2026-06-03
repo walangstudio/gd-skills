@@ -153,6 +153,11 @@ Delegate to appropriate agents:
 - Progression design
 - Difficulty curve
 
+**Discipline specialists** (delegate when the game needs them):
+- `narrative-designer` for story, lore, dialogue structure, characters, quests
+- `accessibility-specialist` for remappable controls, colorblind-safe UI, captions, assist options
+- `security-engineer` for server-authoritative design, save-tamper protection, and anti-cheat on online games
+
 ## Game Creation Workflow
 
 ### Step 1: Understand the Vision
