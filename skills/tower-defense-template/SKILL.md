@@ -224,6 +224,103 @@ public class Tower : MonoBehaviour
 }
 ```
 
+### Defold
+
+The tower is one script component. Tunables are `go.property`; per-level damage/range tables are plain Lua. It finds targets among enemies that registered in range (via a collision object's `collision_response`, kept in a set) and picks one by mode, then spawns a bullet through a factory. The bullet is told its target and damage by message; the tower never reads the enemy's `self`.
+
+```lua
+go.property("damage", 10)
+go.property("fire_rate", 1.0)        -- shots per second
+go.property("attack_range", 150)
+go.property("cost", 100)
+go.property("target_mode", hash("first"))   -- first|last|strongest|closest
+
+local UPGRADE_COSTS = { 150, 250 }
+local DAMAGE_PER_LEVEL = { 10, 18, 30 }
+local RANGE_PER_LEVEL = { 150, 170, 200 }
+local MAX_LEVEL = 3
+
+local function dist(a, b)
+	return vmath.length(a - b)
+end
+
+function init(self)
+	self.level = 1
+	self.fire_timer = 0
+	self.in_range = {}     -- enemy_id -> { progress = n, health = n, pos = v3 }
+end
+
+local function find_target(self)
+	local best, best_score
+	local mode = self.target_mode
+	local my_pos = go.get_position()
+	for id, e in pairs(self.in_range) do
+		local score
+		if mode == hash("first") then score = e.progress
+		elseif mode == hash("last") then score = -e.progress
+		elseif mode == hash("strongest") then score = e.health
+		else score = -dist(my_pos, e.pos) end
+		if not best_score or score > best_score then
+			best_score, best = score, id
+		end
+	end
+	return best
+end
+
+local function shoot(self, target_id)
+	local proj = factory.create("#projectilefactory", go.get_world_position())
+	msg.post(proj, "setup", { target = target_id, damage = self.damage })
+end
+
+function update(self, dt)
+	self.fire_timer = self.fire_timer + dt
+	if self.fire_timer >= 1.0 / self.fire_rate then
+		local target = find_target(self)
+		if target then
+			shoot(self, target)
+			self.fire_timer = 0
+		end
+	end
+end
+
+local function upgrade(self)
+	if self.level >= MAX_LEVEL then return false end
+	self.level = self.level + 1
+	self.damage = DAMAGE_PER_LEVEL[self.level]
+	self.attack_range = RANGE_PER_LEVEL[self.level]
+	msg.post("#", "upgraded", { level = self.level })
+	return true
+end
+
+local function get_upgrade_cost(self)
+	if self.level >= MAX_LEVEL then return -1 end
+	return UPGRADE_COSTS[self.level]
+end
+
+local function get_sell_value(self)
+	local spent = self.cost
+	for i = 1, self.level - 1 do spent = spent + UPGRADE_COSTS[i] end
+	return math.floor(spent * 0.7)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("enemy_in_range") then
+		self.in_range[message.id] = { progress = message.progress, health = message.health, pos = message.pos }
+	elseif message_id == hash("enemy_out_of_range") then
+		self.in_range[message.id] = nil
+	elseif message_id == hash("enemy_state") then
+		local e = self.in_range[message.id]
+		if e then e.progress, e.health, e.pos = message.progress, message.health, message.pos end
+	elseif message_id == hash("upgrade") then
+		if upgrade(self) then
+			msg.post(sender, "upgrade_ok", { cost = get_upgrade_cost(self) })
+		end
+	elseif message_id == hash("query_sell_value") then
+		msg.post(sender, "sell_value", { value = get_sell_value(self) })
+	end
+end
+```
+
 ### Wave System
 ```gdscript
 class_name WaveSystem
@@ -286,6 +383,125 @@ func _on_enemy_died() -> void:
             all_waves_completed.emit()
 ```
 
+### Defold
+
+Wave data is a plain Lua table. Spawning is timer-driven in `update` (delay accumulated with `dt`) rather than a coroutine, so it stays frame-rate independent. Enemies come from a pooled factory and are handed the shared waypoint path; each enemy walks the waypoints itself in its own `update`. When an enemy dies it messages the spawner, which advances the wave.
+
+```lua
+local WAYPOINTS = {
+	vmath.vector3(0, 100, 0), vmath.vector3(200, 100, 0),
+	vmath.vector3(200, 300, 0), vmath.vector3(500, 300, 0),
+}
+
+local WAVE_DATA = {
+	{ { type = "basic", count = 10, delay = 0.5 } },
+	{ { type = "basic", count = 15, delay = 0.4 }, { type = "fast", count = 5, delay = 0.3 } },
+	{ { type = "basic", count = 10, delay = 0.4 }, { type = "tank", count = 3, delay = 1.0 } },
+	{ { type = "fast", count = 20, delay = 0.2 } },
+	{ { type = "boss", count = 1, delay = 0.0 } },
+}
+
+local FACTORIES = {
+	basic = "#basicfactory", fast = "#fastfactory",
+	tank = "#tankfactory", boss = "#bossfactory",
+}
+
+function init(self)
+	self.current_wave = 0
+	self.enemies_alive = 0
+	self.wave_in_progress = false
+	self.spawn_queue = {}     -- flat list of { type, delay } left to spawn
+	self.spawn_timer = 0
+end
+
+local function spawn_enemy(self, type)
+	local id = factory.create(FACTORIES[type], WAYPOINTS[1])
+	msg.post(id, "set_path", { waypoints = WAYPOINTS, owner = msg.url() })
+	self.enemies_alive = self.enemies_alive + 1
+	msg.post("#", "enemy_spawned", { id = id })
+end
+
+local function start_wave(self)
+	if self.wave_in_progress or self.current_wave >= #WAVE_DATA then return end
+	self.wave_in_progress = true
+	self.spawn_queue = {}
+	for _, group in ipairs(WAVE_DATA[self.current_wave + 1]) do
+		for _ = 1, group.count do
+			table.insert(self.spawn_queue, { type = group.type, delay = group.delay })
+		end
+	end
+	self.spawn_timer = 0
+	msg.post("#", "wave_started", { wave = self.current_wave + 1 })
+end
+
+function update(self, dt)
+	if #self.spawn_queue == 0 then return end
+	self.spawn_timer = self.spawn_timer - dt
+	if self.spawn_timer <= 0 then
+		local next_enemy = table.remove(self.spawn_queue, 1)
+		spawn_enemy(self, next_enemy.type)
+		self.spawn_timer = next_enemy.delay
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_wave") then
+		start_wave(self)
+	elseif message_id == hash("enemy_died") then
+		self.enemies_alive = self.enemies_alive - 1
+		if self.enemies_alive <= 0 and self.wave_in_progress and #self.spawn_queue == 0 then
+			self.wave_in_progress = false
+			msg.post("#", "wave_completed", { wave = self.current_wave + 1 })
+			self.current_wave = self.current_wave + 1
+			if self.current_wave >= #WAVE_DATA then
+				msg.post("#", "all_waves_completed")
+			end
+		end
+	end
+end
+```
+
+The enemy script walks the shared waypoints, exposing progress so towers can target by furthest-along:
+
+```lua
+go.property("speed", 60)
+
+function init(self)
+	self.waypoints = nil
+	self.index = 1
+	self.progress = 0       -- 0..#waypoints, used by tower targeting
+end
+
+function update(self, dt)
+	if not self.waypoints then return end
+	local target = self.waypoints[self.index]
+	if not target then return end
+	local pos = go.get_position()
+	local to = target - pos
+	local d = vmath.length(to)
+	local step = self.speed * dt
+	if d <= step then
+		go.set_position(target)
+		self.index = self.index + 1
+		self.progress = self.index
+		if self.index > #self.waypoints then
+			msg.post(self.owner, "reached_end", { id = go.get_id() })
+		end
+	else
+		go.set_position(pos + (to / d) * step)
+		self.progress = self.index
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_path") then
+		self.waypoints = message.waypoints
+		self.owner = message.owner
+		self.index = 1
+	end
+end
+```
+
 ### Economy System
 ```gdscript
 class_name TDEconomy
@@ -320,6 +536,49 @@ func lose_life(amount: int = 1) -> void:
 
 func get_wave_bonus(wave_number: int) -> int:
     return 50 + wave_number * 25
+```
+
+### Defold
+
+A single economy controller holds gold and lives. Towers and the wave system message it to spend, earn, or report a leak; it replies or broadcasts state changes so the HUD updates without polling. Starting values are `go.property` so they are tunable per level.
+
+```lua
+go.property("gold", 200)
+go.property("lives", 20)
+
+local MSG_GOLD = hash("gold_changed")
+local MSG_LIVES = hash("lives_changed")
+local MSG_GAME_OVER = hash("game_over")
+
+local function wave_bonus(wave_number)
+	return 50 + wave_number * 25
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("can_afford") then
+		msg.post(sender, "afford_result", { ok = self.gold >= message.cost, cost = message.cost })
+	elseif message_id == hash("spend") then
+		if self.gold >= message.amount then
+			self.gold = self.gold - message.amount
+			msg.post("#", MSG_GOLD, { amount = self.gold })
+			msg.post(sender, "spend_ok", { amount = message.amount })
+		else
+			msg.post(sender, "spend_failed", { amount = message.amount })
+		end
+	elseif message_id == hash("earn") then
+		self.gold = self.gold + message.amount
+		msg.post("#", MSG_GOLD, { amount = self.gold })
+	elseif message_id == hash("wave_cleared") then
+		self.gold = self.gold + wave_bonus(message.wave)
+		msg.post("#", MSG_GOLD, { amount = self.gold })
+	elseif message_id == hash("lose_life") then
+		self.lives = self.lives - (message.amount or 1)
+		msg.post("#", MSG_LIVES, { amount = self.lives })
+		if self.lives <= 0 then
+			msg.post("#", MSG_GAME_OVER)
+		end
+	end
+end
 ```
 
 ---

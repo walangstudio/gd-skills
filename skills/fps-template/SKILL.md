@@ -198,6 +198,140 @@ public class Weapon : MonoBehaviour
 }
 ```
 
+### Defold
+
+First-person look and move live on the player object: the body holds yaw, a child camera object holds pitch. Shooting is a hitscan via `physics.raycast`. The weapon owns ammo/reload state and posts results as messages; the enemy reacts to its own take_damage.
+
+```lua
+-- player.script  (body yaws; child "camera" pitches)
+go.property("move_speed", 6)
+go.property("mouse_sensitivity", 0.0025)
+
+local PITCH_LIMIT = math.pi * 0.49
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.yaw = 0
+	self.pitch = 0
+	self.move = vmath.vector3()
+end
+
+function update(self, dt)
+	local fwd = vmath.rotate(vmath.quat_rotation_z(self.yaw), vmath.vector3(self.move.x, 0, self.move.z))
+	if vmath.length(fwd) > 0 then
+		local pos = go.get_position() + vmath.normalize(fwd) * self.move_speed * dt
+		go.set_position(pos)
+	end
+	self.move = vmath.vector3()
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("look") then
+		self.yaw = self.yaw - action.dx * self.mouse_sensitivity
+		self.pitch = math.max(-PITCH_LIMIT, math.min(PITCH_LIMIT, self.pitch + action.dy * self.mouse_sensitivity))
+		go.set_rotation(vmath.quat_rotation_y(self.yaw))
+		go.set_rotation(vmath.quat_rotation_x(self.pitch), "camera")
+	elseif action_id == hash("move_forward") then
+		self.move.z = self.move.z - action.value
+	elseif action_id == hash("move_back") then
+		self.move.z = self.move.z + action.value
+	elseif action_id == hash("strafe_left") then
+		self.move.x = self.move.x - action.value
+	elseif action_id == hash("strafe_right") then
+		self.move.x = self.move.x + action.value
+	end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+```
+
+```lua
+-- weapon.script  (sibling of the camera; raycasts from the camera forward)
+go.property("damage", 25)
+go.property("fire_rate", 0.2)
+go.property("magazine_size", 12)
+go.property("reserve_ammo", 60)
+go.property("reload_time", 1.5)
+go.property("automatic", false)
+go.property("range", 100)
+
+local HITSCAN_GROUPS = { hash("enemy"), hash("world") }
+
+local function fire(self)
+	if self.is_reloading or self.cooldown > 0 then return end
+	if self.current_ammo <= 0 then reload(self); return end
+	self.current_ammo = self.current_ammo - 1
+	self.cooldown = self.fire_rate
+	msg.post("#muzzle_flash", "play")
+	msg.post("/hud#gui", "ammo_changed", { current = self.current_ammo, reserve = self.reserve_ammo })
+
+	local from = go.get_world_position("camera")
+	local dir = vmath.rotate(go.get_world_rotation("camera"), vmath.vector3(0, 0, -1))
+	local hit = physics.raycast(from, from + dir * self.range, HITSCAN_GROUPS)
+	if hit then
+		msg.post(hit.id, "take_damage", { amount = self.damage, point = hit.position })
+	end
+end
+
+function reload(self)
+	if self.is_reloading or self.reserve_ammo <= 0 or self.current_ammo == self.magazine_size then return end
+	self.is_reloading = true
+	timer.delay(self.reload_time, false, function()
+		local needed = self.magazine_size - self.current_ammo
+		local to_add = math.min(needed, self.reserve_ammo)
+		self.current_ammo = self.current_ammo + to_add
+		self.reserve_ammo = self.reserve_ammo - to_add
+		self.is_reloading = false
+		msg.post("/hud#gui", "ammo_changed", { current = self.current_ammo, reserve = self.reserve_ammo })
+	end)
+end
+
+function init(self)
+	self.current_ammo = self.magazine_size
+	self.cooldown = 0
+	self.is_reloading = false
+end
+
+function update(self, dt)
+	if self.cooldown > 0 then self.cooldown = self.cooldown - dt end
+	if self.automatic and self.firing then fire(self) end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("fire") then
+		if self.automatic then
+			self.firing = action.value > 0
+		elseif action.pressed then
+			fire(self)
+		end
+	elseif action_id == hash("reload") and action.pressed then
+		reload(self)
+	end
+end
+```
+
+```lua
+-- enemy.script  (reacts to its own take_damage; no inheritance, message-driven)
+go.property("max_health", 100)
+
+function init(self)
+	self.health = self.max_health
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("take_damage") then
+		self.health = math.max(0, self.health - message.amount)
+		msg.post("#sprite", "play_animation", { id = hash("hit") })
+		if self.health == 0 then
+			msg.post("/game#controller", "enemy_killed", { id = go.get_id() })
+			go.delete()
+		end
+	end
+end
+```
+
 ### Weapon Manager
 ```gdscript
 class_name WeaponManager
@@ -242,6 +376,50 @@ func add_ammo(weapon_type: String, amount: int) -> void:
         if weapon.weapon_name == weapon_type:
             weapon.reserve_ammo += amount
             break
+```
+
+### Defold
+
+Each weapon is a separate game object parented to the camera. The manager enables the active one and disables the rest by message, and routes ammo pickups to the matching weapon. No object reaches into another.
+
+```lua
+-- weapon_manager.script  (parent of weapon_0, weapon_1, ... child objects)
+local SLOTS = { hash("/player/camera/weapon_0"), hash("/player/camera/weapon_1"), hash("/player/camera/weapon_2") }
+
+local function equip(self, index)
+	if index < 1 or index > #SLOTS then return end
+	for i, id in ipairs(SLOTS) do
+		local on = (i == index)
+		msg.post(id, on and "enable" or "disable")
+		msg.post(msg.url(nil, id, "weapon"), on and "acquire_input_focus" or "release_input_focus")
+	end
+	self.current = index
+	msg.post("/hud#gui", "weapon_changed", { slot = index })
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.current = 1
+	equip(self, 1)
+end
+
+function on_input(self, action_id, action)
+	if not action.pressed then return end
+	if action_id == hash("weapon_1") then equip(self, 1)
+	elseif action_id == hash("weapon_2") then equip(self, 2)
+	elseif action_id == hash("weapon_3") then equip(self, 3)
+	elseif action_id == hash("next_weapon") then equip(self, (self.current % #SLOTS) + 1)
+	elseif action_id == hash("prev_weapon") then equip(self, ((self.current - 2) % #SLOTS) + 1)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_ammo") then
+		for _, id in ipairs(SLOTS) do
+			msg.post(msg.url(nil, id, "weapon"), "add_reserve", { type = message.type, amount = message.amount })
+		end
+	end
+end
 ```
 
 ### Pickup System
@@ -300,6 +478,62 @@ func collect() -> void:
         queue_free()
 ```
 
+### Defold
+
+A pickup is a game object with a trigger collision object. It bobs in `update`, and on `trigger_response` with the player it tells the player to heal or routes ammo through the weapon manager, then disables itself (respawning by timer or deleting).
+
+```lua
+-- pickup.script
+go.property("kind", hash("health"))   -- health | armor | ammo
+go.property("amount", 25)
+go.property("ammo_type", hash("pistol"))
+go.property("respawn_time", 30)
+go.property("bob_speed", 2)
+go.property("bob_height", 0.2)
+
+function init(self)
+	self.start = go.get_position()
+	self.time = 0
+	self.collected = false
+end
+
+function update(self, dt)
+	if self.collected then return end
+	self.time = self.time + dt
+	local p = self.start
+	go.set_position(vmath.vector3(p.x, p.y + math.sin(self.time * self.bob_speed) * self.bob_height, p.z))
+	go.set_rotation(vmath.quat_rotation_y(self.time))
+end
+
+local function collect(self)
+	self.collected = true
+	msg.post("#sprite", "disable")
+	msg.post("#collision", "disable")
+	if self.respawn_time > 0 then
+		timer.delay(self.respawn_time, false, function()
+			self.collected = false
+			msg.post("#sprite", "enable")
+			msg.post("#collision", "enable")
+		end)
+	else
+		go.delete()
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.enter and not self.collected then
+		if message.other_group == hash("player") then
+			if self.kind == hash("ammo") then
+				msg.post("/player#weapon_manager", "add_ammo", { type = self.ammo_type, amount = self.amount })
+			else
+				msg.post(message.other_id, self.kind == hash("armor") and "add_armor" or "heal", { amount = self.amount })
+			end
+			collect(self)
+		end
+	end
+end
+```
+
 ### Head Bob Effect
 ```gdscript
 # Add to FPS player script
@@ -313,6 +547,39 @@ func apply_head_bob(delta: float) -> void:
         camera.position.y = sin(bob_time * BOB_FREQUENCY) * BOB_AMPLITUDE
     else:
         camera.position.y = lerpf(camera.position.y, 0.0, delta * 10.0)
+```
+
+### Defold
+
+Offset the child camera object's local y by a sine of accumulated bob time while moving, and lerp it back to rest when still. Drive `speed` from the player's actual move each frame.
+
+```lua
+-- head_bob.script  (attached to the camera child object)
+go.property("bob_frequency", 2)
+go.property("bob_amplitude", 0.05)
+
+function init(self)
+	self.bob_time = 0
+	self.rest_y = go.get_position().y
+	self.speed = 0
+end
+
+function update(self, dt)
+	local p = go.get_position()
+	if self.speed > 0.1 then
+		self.bob_time = self.bob_time + dt * self.speed
+		p.y = self.rest_y + math.sin(self.bob_time * self.bob_frequency) * self.bob_amplitude
+	else
+		p.y = vmath.lerp(math.min(1, dt * 10), p.y, self.rest_y)
+	end
+	go.set_position(p)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_speed") then
+		self.speed = message.speed   -- player posts its horizontal speed each frame
+	end
+end
 ```
 
 ---

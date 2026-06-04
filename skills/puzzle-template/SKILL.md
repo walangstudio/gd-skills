@@ -268,6 +268,143 @@ public class PuzzleGrid : MonoBehaviour
 }
 ```
 
+### Defold
+
+A controller script owns the board model as a plain Lua 2D table plus an entity table. The push chain, move recording, undo, and win check are all data — no inheritance, and tiles are spawned through a factory and addressed by id. Movement of the visuals is a message to each tile; the model never reaches into a tile's `self`.
+
+```lua
+go.property("width", 8)
+go.property("height", 8)
+go.property("cell_size", 64)
+
+local MSG_MOVE_MADE = hash("move_made")
+local MSG_SOLVED = hash("puzzle_solved")
+local MSG_UNDONE = hash("move_undone")
+
+local function clear_grid(self)
+	self.grid = {}
+	for y = 1, self.height do
+		self.grid[y] = {}
+		for x = 1, self.width do
+			self.grid[y][x] = {}
+		end
+	end
+end
+
+local function is_valid(self, x, y)
+	return x >= 1 and x <= self.width and y >= 1 and y <= self.height
+end
+
+local function grid_to_world(self, x, y)
+	return vmath.vector3((x - 1) * self.cell_size, (y - 1) * self.cell_size, 0)
+end
+
+function init(self)
+	self.entities = {}     -- id -> {type, x, y, props, go_id}
+	self.move_history = {}
+	clear_grid(self)
+end
+
+local function add_entity(self, id, type, x, y, props)
+	local go_id = factory.create("#tilefactory", grid_to_world(self, x, y))
+	msg.post(go_id, "set_type", { type = type })
+	self.entities[id] = { type = type, x = x, y = y, props = props or {}, go_id = go_id }
+	table.insert(self.grid[y][x], id)
+end
+
+local function execute_move(self, id, fx, fy, tx, ty)
+	local cell = self.grid[fy][fx]
+	for i = #cell, 1, -1 do
+		if cell[i] == id then table.remove(cell, i) end
+	end
+	table.insert(self.grid[ty][tx], id)
+	local e = self.entities[id]
+	e.x, e.y = tx, ty
+	go.animate(e.go_id, "position", go.PLAYBACK_ONCE_FORWARD,
+		grid_to_world(self, tx, ty), go.EASING_OUTQUAD, 0.12)
+end
+
+local function get_push_chain(self, pusher_id, dx, dy)
+	local chain = {}
+	local e = self.entities[pusher_id]
+	local cx, cy = e.x + dx, e.y + dy
+	while is_valid(self, cx, cy) do
+		local pushable_found = false
+		for _, occ_id in ipairs(self.grid[cy][cx]) do
+			local occ = self.entities[occ_id]
+			if occ.props.pushable then
+				table.insert(chain, occ_id)
+				pushable_found = true
+				break
+			elseif occ.props.solid then
+				return nil   -- blocked
+			end
+		end
+		if not pushable_found then break end
+		cx, cy = cx + dx, cy + dy
+	end
+	return chain
+end
+
+local function check_solved(self)
+	for _, e in pairs(self.entities) do
+		if e.type == "target" then
+			local has_box = false
+			for _, occ_id in ipairs(self.grid[e.y][e.x]) do
+				if self.entities[occ_id].type == "box" then has_box = true break end
+			end
+			if not has_box then return end
+		end
+	end
+	msg.post("#", MSG_SOLVED)
+end
+
+local function move_entity(self, id, dx, dy)
+	local e = self.entities[id]
+	local fx, fy = e.x, e.y
+	local tx, ty = fx + dx, fy + dy
+	if not is_valid(self, tx, ty) then return false end
+
+	local chain = get_push_chain(self, id, dx, dy)
+	if not chain then return false end
+
+	local record = { moves = {} }
+	for _, pushed_id in ipairs(chain) do
+		local p = self.entities[pushed_id]
+		local pfx, pfy = p.x, p.y
+		execute_move(self, pushed_id, pfx, pfy, pfx + dx, pfy + dy)
+		table.insert(record.moves, { id = pushed_id, fx = pfx, fy = pfy, tx = pfx + dx, ty = pfy + dy })
+	end
+	execute_move(self, id, fx, fy, tx, ty)
+	table.insert(record.moves, { id = id, fx = fx, fy = fy, tx = tx, ty = ty })
+
+	table.insert(self.move_history, record)
+	msg.post("#", MSG_MOVE_MADE, { id = id, fx = fx, fy = fy, tx = tx, ty = ty })
+	check_solved(self)
+	return true
+end
+
+local function undo(self)
+	local record = table.remove(self.move_history)
+	if not record then return end
+	for i = #record.moves, 1, -1 do
+		local m = record.moves[i]
+		execute_move(self, m.id, m.tx, m.ty, m.fx, m.fy)
+	end
+	msg.post("#", MSG_UNDONE)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_entity") then
+		add_entity(self, message.id, message.type, message.x, message.y, message.props)
+	elseif message_id == hash("move") then
+		move_entity(self, message.id, message.dx, message.dy)
+	elseif message_id == hash("undo") then
+		undo(self)
+	end
+end
+```
+
 ### Level Manager
 ```gdscript
 class_name PuzzleLevelManager
@@ -336,6 +473,92 @@ func load_progress() -> void:
             var json := JSON.new()
             if json.parse(file.get_as_text()) == OK:
                 completion = json.data
+```
+
+### Defold
+
+Progress is a plain Lua table persisted with `sys.save`/`sys.load`. Star count is computed from moves vs par; results are reported as messages so the HUD and level loader react without reaching into this script.
+
+```lua
+go.property("total_levels", 50)
+
+local MSG_LEVEL_LOADED = hash("level_loaded")
+local MSG_LEVEL_COMPLETED = hash("level_completed")
+local MSG_ALL_COMPLETED = hash("all_levels_completed")
+
+local function save_path()
+	return sys.get_save_file("puzzlegame", "progress")
+end
+
+local function load_progress(self)
+	local data = sys.load(save_path())   -- {} when nothing saved
+	self.completion = data.completion or {}
+end
+
+local function save_progress(self)
+	sys.save(save_path(), { completion = self.completion })
+end
+
+function init(self)
+	self.current_level = 0
+	self.level_data = require("main.levels")   -- list of {par = n, ...}
+	load_progress(self)
+end
+
+local function load_level(self, level_num)
+	self.current_level = level_num
+	msg.post("#", MSG_LEVEL_LOADED, { level = level_num })
+	return self.level_data[level_num + 1]
+end
+
+local function complete_level(self, moves)
+	local par = (self.level_data[self.current_level + 1] or {}).par or 20
+	local stars = 1
+	if moves <= par then stars = 3
+	elseif moves <= par * 1.5 then stars = 2 end
+
+	local key = tostring(self.current_level)
+	local prev = self.completion[key] or { completed = false, stars = 0, best_moves = 9999 }
+	self.completion[key] = {
+		completed = true,
+		stars = math.max(prev.stars, stars),
+		best_moves = math.min(prev.best_moves, moves),
+	}
+	msg.post("#", MSG_LEVEL_COMPLETED, { level = self.current_level, stars = stars, moves = moves })
+	save_progress(self)
+
+	if self.current_level >= self.total_levels - 1 then
+		msg.post("#", MSG_ALL_COMPLETED)
+	end
+end
+
+local function is_unlocked(self, level_num)
+	if level_num == 0 then return true end
+	local prev = self.completion[tostring(level_num - 1)]
+	return prev ~= nil and prev.completed
+end
+
+local function total_stars(self)
+	local total = 0
+	for _, c in pairs(self.completion) do total = total + c.stars end
+	return total
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("load_level") then
+		load_level(self, message.level)
+	elseif message_id == hash("complete_level") then
+		complete_level(self, message.moves)
+	elseif message_id == hash("next_level") then
+		if self.current_level < self.total_levels - 1 then
+			load_level(self, self.current_level + 1)
+		end
+	elseif message_id == hash("query_stars") then
+		msg.post(sender, "total_stars", { value = total_stars(self) })
+	elseif message_id == hash("query_unlocked") then
+		msg.post(sender, "unlocked", { level = message.level, unlocked = is_unlocked(self, message.level) })
+	end
+end
 ```
 
 ---

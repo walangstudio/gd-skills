@@ -203,6 +203,101 @@ public class CropSystem : MonoBehaviour
 }
 ```
 
+### Defold (Crop System)
+```lua
+-- crops.script — tracks planted crops on a grid, advances stages each game day
+-- crop stats live in a plain Lua table; tiles keyed by a "x,y" string
+local CROP_DB = {
+	turnip = { stages = 3, days_per_stage = 1, seasons = { spring = true }, sell_price = 60, min_yield = 1, max_yield = 3 },
+	potato = { stages = 4, days_per_stage = 2, seasons = { spring = true }, sell_price = 80, min_yield = 1, max_yield = 2 },
+	tomato = { stages = 4, days_per_stage = 2, seasons = { summer = true }, sell_price = 100, min_yield = 1, max_yield = 4, regrows = true },
+}
+
+local MSG_CROP_PLANTED = hash("crop_planted")
+local MSG_CROP_GREW = hash("crop_grew")
+local MSG_CROP_HARVESTED = hash("crop_harvested")
+local MSG_CROP_DIED = hash("crop_died")
+
+local function key(x, y)
+	return x .. "," .. y
+end
+
+local function plant(self, x, y, crop_id, season)
+	local data = CROP_DB[crop_id]
+	local k = key(x, y)
+	if self.crops[k] or not data or not data.seasons[season] then
+		return false
+	end
+	self.crops[k] = { id = crop_id, stage = 0, days_in_stage = 0, watered = false, fertilized = false }
+	msg.post("#controller", MSG_CROP_PLANTED, { x = x, y = y, id = crop_id })
+	return true
+end
+
+local function water(self, x, y)
+	local crop = self.crops[key(x, y)]
+	if crop then crop.watered = true end
+end
+
+local function harvest(self, x, y)
+	local k = key(x, y)
+	local crop = self.crops[k]
+	if not crop then return nil end
+	local data = CROP_DB[crop.id]
+	if crop.stage < data.stages then return nil end
+
+	local amount = math.random(data.min_yield, data.max_yield)
+	msg.post("#controller", MSG_CROP_HARVESTED, { x = x, y = y, id = crop.id, amount = amount })
+	msg.post("#inventory", "add_item", { item = crop.id, amount = amount })
+
+	if data.regrows then
+		crop.stage = data.stages - 1
+		crop.days_in_stage = 0
+	else
+		self.crops[k] = nil
+	end
+	return { id = crop.id, amount = amount, sell_price = data.sell_price }
+end
+
+local function advance_day(self, season)
+	local dead = {}
+	for k, crop in pairs(self.crops) do
+		local data = CROP_DB[crop.id]
+		if not data.seasons[season] then
+			dead[#dead + 1] = k
+		elseif crop.watered then
+			crop.days_in_stage = crop.days_in_stage + 1
+			local rate = crop.fertilized and math.max(1, data.days_per_stage - 1) or data.days_per_stage
+			if crop.days_in_stage >= rate and crop.stage < data.stages then
+				crop.stage = crop.stage + 1
+				crop.days_in_stage = 0
+				msg.post("#controller", MSG_CROP_GREW, { key = k, stage = crop.stage })
+			end
+		end
+		crop.watered = false
+	end
+	for _, k in ipairs(dead) do
+		self.crops[k] = nil
+		msg.post("#controller", MSG_CROP_DIED, { key = k })
+	end
+end
+
+function init(self)
+	self.crops = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("plant") then
+		plant(self, message.x, message.y, message.crop_id, message.season)
+	elseif message_id == hash("water") then
+		water(self, message.x, message.y)
+	elseif message_id == hash("harvest") then
+		harvest(self, message.x, message.y)
+	elseif message_id == hash("advance_day") then
+		advance_day(self, message.season)
+	end
+end
+```
+
 ### Season/Calendar System
 ```gdscript
 class_name CalendarSystem
@@ -254,6 +349,60 @@ func get_season_name() -> String:
 
 func get_date_string() -> String:
     return "%s %d, Year %d" % [get_season_name().capitalize(), current_day, current_year]
+```
+
+### Defold (Season/Calendar System)
+```lua
+-- calendar.script — rolls day -> season -> year and fires festival messages
+go.property("days_per_season", 28)
+
+local SEASONS = { "spring", "summer", "fall", "winter" }
+local FESTIVALS = {
+	spring_13 = "Egg Festival",
+	summer_11 = "Luau",
+	fall_16 = "Harvest Festival",
+	winter_25 = "Feast of the Winter Star",
+}
+
+local MSG_DAY_CHANGED = hash("day_changed")
+local MSG_SEASON_CHANGED = hash("season_changed")
+local MSG_YEAR_CHANGED = hash("year_changed")
+local MSG_FESTIVAL = hash("festival_today")
+
+local function season_name(self)
+	return SEASONS[self.season]
+end
+
+function init(self)
+	self.day = 1
+	self.season = 1   -- index into SEASONS
+	self.year = 1
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id ~= hash("advance_day") then return end
+
+	self.day = self.day + 1
+	if self.day > self.days_per_season then
+		self.day = 1
+		self.season = self.season + 1
+		if self.season > #SEASONS then
+			self.season = 1
+			self.year = self.year + 1
+			msg.post("#controller", MSG_YEAR_CHANGED, { year = self.year })
+		end
+		msg.post("#controller", MSG_SEASON_CHANGED, { season = season_name(self) })
+	end
+
+	msg.post("#controller", MSG_DAY_CHANGED, { day = self.day })
+	-- crops advance with the new day
+	msg.post("/farm#crops", "advance_day", { season = season_name(self) })
+
+	local festival = FESTIVALS[season_name(self) .. "_" .. self.day]
+	if festival then
+		msg.post("#controller", MSG_FESTIVAL, { name = festival })
+	end
+end
 ```
 
 ### NPC Relationship System
@@ -316,6 +465,65 @@ func get_heart_level(npc_id: String) -> int:
 
 func talk_to(npc_id: String) -> void:
     add_friendship(npc_id, 20)  # Daily talk bonus
+```
+
+### Defold (NPC Relationship System)
+```lua
+-- relationships.script — gift reactions and heart levels, all data-driven
+local POINTS_PER_HEART = 250
+local MAX_HEARTS = 10
+local MAX_POINTS = POINTS_PER_HEART * MAX_HEARTS
+
+-- gift preferences as a plain Lua table; sets for O(1) lookup
+local GIFT_PREFS = {
+	mayor = { loved = { wine = true, truffle = true }, liked = { cheese = true }, disliked = { clay = true } },
+	blacksmith = { loved = { gold_bar = true, diamond = true }, liked = { iron_bar = true }, disliked = { flower = true } },
+}
+
+local MSG_FRIENDSHIP_CHANGED = hash("friendship_changed")
+local MSG_NEW_HEART_LEVEL = hash("new_heart_level")
+
+local function heart_level(points)
+	return math.floor(points / POINTS_PER_HEART)
+end
+
+local function add_friendship(self, npc_id, amount)
+	local data = self.friendships[npc_id]
+	if not data then return end
+	local old_level = heart_level(data.points)
+	data.points = math.max(0, math.min(MAX_POINTS, data.points + amount))
+	local new_level = heart_level(data.points)
+	msg.post("#hud", MSG_FRIENDSHIP_CHANGED, { npc = npc_id, points = data.points, level = new_level })
+	if new_level > old_level then
+		msg.post("#hud", MSG_NEW_HEART_LEVEL, { npc = npc_id, level = new_level })
+	end
+end
+
+local function reaction_points(npc_id, item_id)
+	local prefs = GIFT_PREFS[npc_id]
+	if prefs then
+		if prefs.loved and prefs.loved[item_id] then return "loved", 80 end
+		if prefs.liked and prefs.liked[item_id] then return "liked", 45 end
+		if prefs.disliked and prefs.disliked[item_id] then return "disliked", -20 end
+	end
+	return "neutral", 20
+end
+
+function init(self)
+	self.friendships = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("init_npc") then
+		self.friendships[message.npc] = { points = 0 }
+	elseif message_id == hash("give_gift") then
+		local reaction, points = reaction_points(message.npc, message.item)
+		add_friendship(self, message.npc, points)
+		msg.post(sender, "gift_reaction", { npc = message.npc, reaction = reaction })
+	elseif message_id == hash("talk_to") then
+		add_friendship(self, message.npc, 20)   -- daily talk bonus
+	end
+end
 ```
 
 ---

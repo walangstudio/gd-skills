@@ -149,6 +149,57 @@ public class NeedsSystem : MonoBehaviour
 }
 ```
 
+### Defold (Needs System)
+```lua
+-- needs.script — drains hunger/thirst/stamina with dt, reports to the HUD
+go.property("hunger", 100)
+go.property("thirst", 100)
+go.property("stamina", 100)
+
+local NEED_MAX = 100
+local CRITICAL = 20
+local DRAIN = { hunger = 1.0, thirst = 1.5, stamina = 0.0 }
+
+local MSG_NEED_CHANGED = hash("need_changed")
+local MSG_NEED_CRITICAL = hash("need_critical")
+local MSG_NEED_DEPLETED = hash("need_depleted")
+
+local function value_of(self, id)
+	return self.needs[id]
+end
+
+local function modify(self, id, amount)
+	local v = math.max(0, math.min(NEED_MAX, self.needs[id] + amount))
+	self.needs[id] = v
+	msg.post("/hud#gui", MSG_NEED_CHANGED, { id = id, current = v, max = NEED_MAX })
+	if v <= 0 then
+		msg.post("#controller", MSG_NEED_DEPLETED, { id = id })
+	elseif v <= CRITICAL then
+		msg.post("#controller", MSG_NEED_CRITICAL, { id = id })
+	end
+end
+
+function init(self)
+	self.needs = { hunger = self.hunger, thirst = self.thirst, stamina = self.stamina }
+end
+
+function update(self, dt)
+	for id, rate in pairs(DRAIN) do
+		if rate > 0 then
+			modify(self, id, -rate * dt)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("restore_need") then
+		modify(self, message.id, message.amount)   -- eat/drink/rest restores
+	elseif message_id == hash("get_need") then
+		msg.post(sender, "need_value", { id = message.id, value = value_of(self, message.id) })
+	end
+end
+```
+
 ### Crafting System
 ```gdscript
 class_name CraftingSystem
@@ -251,6 +302,56 @@ public class CraftingSystem : MonoBehaviour
 }
 ```
 
+### Defold (Crafting System)
+```lua
+-- crafting.script — data-driven recipes, consumes from an inventory script via messages
+-- recipes are a plain Lua table: item -> { ingredients = {...}, station = "" }
+local RECIPES = {
+	axe       = { ingredients = { wood = 3, stone = 2 }, craft_time = 1.0, station = "" },
+	iron_bar  = { ingredients = { iron_ore = 2 },        craft_time = 2.0, station = "forge" },
+	workbench = { ingredients = { wood = 15 },           craft_time = 1.5, station = "" },
+}
+
+local MSG_ITEM_CRAFTED = hash("item_crafted")
+local MSG_CRAFT_FAILED = hash("craft_failed")
+
+local function can_craft(recipe, counts, station)
+	if recipe.station ~= "" and recipe.station ~= station then
+		return false
+	end
+	for item, need in pairs(recipe.ingredients) do
+		if (counts[item] or 0) < need then
+			return false
+		end
+	end
+	return true
+end
+
+function init(self)
+	self.station = ""
+	self.counts = {}            -- mirror of inventory, refreshed via "inventory_counts"
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_station") then
+		self.station = message.station or ""
+	elseif message_id == hash("inventory_counts") then
+		self.counts = message.counts          -- inventory script replies with its table
+	elseif message_id == hash("craft") then
+		local recipe = RECIPES[message.item]
+		if not recipe or not can_craft(recipe, self.counts, self.station) then
+			msg.post(sender, MSG_CRAFT_FAILED, { item = message.item })
+			return
+		end
+		for item, need in pairs(recipe.ingredients) do
+			msg.post("#inventory", "remove_item", { item = item, amount = need })
+		end
+		msg.post("#inventory", "add_item", { item = message.item, amount = 1 })
+		msg.post(sender, MSG_ITEM_CRAFTED, { item = message.item })
+	end
+end
+```
+
 ### Base Building System
 ```gdscript
 class_name BuildingSystem
@@ -331,6 +432,66 @@ func clear_ghost_material(node: Node3D) -> void:
     pass  # Restore original material
 ```
 
+### Defold (Base Building System)
+```lua
+-- builder.script — snaps a ghost to a grid, spawns the real structure via a factory
+go.property("grid_size", 1.0)
+go.property("snap_to_grid", true)
+
+-- structure data is a Lua table; each factory url builds one structure type
+local STRUCTURES = {
+	wall      = { factory = "#wall_factory",     cost = { wood = 10 } },
+	floor     = { factory = "#floor_factory",    cost = { wood = 8 } },
+	campfire  = { factory = "#campfire_factory",  cost = { wood = 5, stone = 3 } },
+	workbench = { factory = "#workbench_factory", cost = { wood = 15 } },
+}
+
+local MODE_NONE = hash("none")
+local MODE_PLACING = hash("placing")
+local MSG_STRUCTURE_PLACED = hash("structure_placed")
+
+local function snap(self, pos)
+	if not self.snap_to_grid then return pos end
+	local g = self.grid_size
+	return vmath.vector3(math.floor(pos.x / g + 0.5) * g, pos.y, math.floor(pos.z / g + 0.5) * g)
+end
+
+local function affordable(cost, counts)
+	for res, amount in pairs(cost) do
+		if (counts[res] or 0) < amount then return false end
+	end
+	return true
+end
+
+function init(self)
+	self.mode = MODE_NONE
+	self.current = nil          -- structure id being placed
+	self.ghost_pos = vmath.vector3()
+	self.counts = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("enter_build_mode") then
+		self.mode = MODE_PLACING
+		self.current = message.structure
+	elseif message_id == hash("inventory_counts") then
+		self.counts = message.counts
+	elseif message_id == hash("update_ghost") then
+		self.ghost_pos = snap(self, message.position)
+	elseif message_id == hash("confirm_placement") and self.mode == MODE_PLACING then
+		local data = STRUCTURES[self.current]
+		if not data or not affordable(data.cost, self.counts) then return end
+		for res, amount in pairs(data.cost) do
+			msg.post("#inventory", "remove_item", { item = res, amount = amount })
+		end
+		local id = factory.create(data.factory, self.ghost_pos)
+		self.mode = MODE_NONE
+		self.current = nil
+		msg.post(sender, MSG_STRUCTURE_PLACED, { id = id })
+	end
+end
+```
+
 ### Day/Night Cycle
 ```gdscript
 class_name DayNightCycle
@@ -397,6 +558,55 @@ func get_formatted_time() -> String:
     return "%02d:%02d" % [h, m]
 ```
 
+### Defold (Day/Night Cycle)
+```lua
+-- daynight.script — advances a 0..24 clock with dt and rotates the sun light
+go.property("day_length_minutes", 20.0)
+go.property("start_hour", 8.0)
+go.property("dawn_hour", 6.0)
+go.property("dusk_hour", 18.0)
+
+local MSG_DAY_STARTED = hash("day_started")
+local MSG_NIGHT_STARTED = hash("night_started")
+local MSG_NEW_DAY = hash("new_day")
+
+local function sun_energy(self, t)
+	if t >= self.dawn_hour and t <= self.dusk_hour then
+		local mid = (self.dawn_hour + self.dusk_hour) / 2.0
+		return 1.0 - math.abs(t - mid) / (mid - self.dawn_hour) * 0.5
+	end
+	return 0.0
+end
+
+function init(self)
+	self.time = self.start_hour
+	self.day = 1
+end
+
+function update(self, dt)
+	local hours_per_second = 24.0 / (self.day_length_minutes * 60.0)
+	local prev = self.time
+	self.time = self.time + hours_per_second * dt
+
+	if self.time >= 24.0 then
+		self.time = self.time - 24.0
+		self.day = self.day + 1
+		msg.post("#controller", MSG_NEW_DAY, { day = self.day })
+	end
+
+	if prev < self.dawn_hour and self.time >= self.dawn_hour then
+		msg.post("#controller", MSG_DAY_STARTED)
+	elseif prev < self.dusk_hour and self.time >= self.dusk_hour then
+		msg.post("#controller", MSG_NIGHT_STARTED)
+	end
+
+	-- rotate the sun game object and drive a light constant
+	local angle = (self.time / 24.0) * 360.0 - 90.0
+	go.set_rotation(vmath.quat_rotation_z(math.rad(angle)), "/sun")
+	msg.post("#hud", "set_time", { hour = self.time, energy = sun_energy(self, self.time) })
+end
+```
+
 ### Temperature System
 ```gdscript
 class_name TemperatureSystem
@@ -443,6 +653,60 @@ func calculate_effective_temp() -> float:
 func register_heat_source(pos: Vector3, radius: float, warmth: float) -> int:
     heat_sources.append({"position": pos, "radius": radius, "warmth": warmth})
     return heat_sources.size() - 1
+```
+
+### Defold (Temperature System)
+```lua
+-- temperature.script — body temp eases toward the effective env temp every frame
+go.property("body_temperature", 36.5)
+go.property("environment_temperature", 22.0)
+go.property("change_rate", 0.5)
+
+local HYPOTHERMIA = 34.0
+local OVERHEAT = 40.0
+
+local MSG_HYPOTHERMIA = hash("hypothermia")
+local MSG_OVERHEATING = hash("overheating")
+
+-- heat sources are a plain list of { position, radius, warmth }
+local function effective_temp(self)
+	local temp = self.environment_temperature
+	local here = go.get_position()
+	for _, src in ipairs(self.heat_sources) do
+		local dist = vmath.length(here - src.position)
+		if dist < src.radius then
+			temp = temp + src.warmth * (1.0 - dist / src.radius)
+		end
+	end
+	return temp
+end
+
+function init(self)
+	self.heat_sources = {}
+end
+
+function update(self, dt)
+	local target = effective_temp(self)
+	if self.body_temperature < target then
+		self.body_temperature = self.body_temperature + self.change_rate * dt
+	elseif self.body_temperature > target then
+		self.body_temperature = self.body_temperature - self.change_rate * dt
+	end
+
+	if self.body_temperature < HYPOTHERMIA then
+		msg.post("#controller", MSG_HYPOTHERMIA)
+	elseif self.body_temperature > OVERHEAT then
+		msg.post("#controller", MSG_OVERHEATING)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("register_heat_source") then
+		table.insert(self.heat_sources, {
+			position = message.position, radius = message.radius, warmth = message.warmth,
+		})
+	end
+end
 ```
 
 ---
