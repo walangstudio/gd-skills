@@ -33,9 +33,11 @@ Open any `index.html` to play.
 - **`web/coin-collector`** — move, collect 5 coins, win. Fixed timestep, AABB-vs-circle. (8 test groups)
 - **`web/snake`** — grid movement, grow on eat, wall/self collision. Discrete-tick loop, injected RNG. (7 test groups)
 - **`web/breakout`** — paddle + ball, brick reflection, lives/win/lose. Sub-stepped ball (no tunneling). (13 test groups)
+- **`web/platformer`** — gravity, jump (grounded-only, no double-jump), AABB platform collision, reach the goal. Sub-stepped fall (no tunneling). (10 test groups)
 
-Godot and Defold samples follow (open + scriptable, fast to verify in-editor);
-Unity/Unreal after.
+Every sample's `test.js` runs in CI (`scripts/test-samples.sh`), so the logic can't
+silently regress. Godot and Defold samples follow (open + scriptable, fast to
+verify in-editor); Unity/Unreal after.
 
 ## Large assets
 

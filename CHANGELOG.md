@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depth directories (`docs`, `guides`, `design`) now installed for the Claude target
 - Self-repair loop: `/self-repair` + `guides/self-repair-loop.md` — with a connected engine MCP, run → screenshot → diff vs intent → auto-fix (Godot/Defold first)
 - `guides/rag-setup.md` — optional power-user path to index engine reference docs into a mememo vector store
-- Runnable web samples: `samples/web/coin-collector`, `samples/web/snake`, `samples/web/breakout` — dependency-free HTML5 canvas games, each with logic split from rendering and headless unit tests (`node test.js`)
+- Runnable web samples: `samples/web/coin-collector`, `samples/web/snake`, `samples/web/breakout`, `samples/web/platformer` — dependency-free HTML5 canvas games, each with logic split from rendering and headless unit tests (`node test.js`); `scripts/test-samples.sh` runs them all in CI
 
 ### Fixed
 - Command injection vulnerability in hooks.json — moved inline `node -e` to standalone .js scripts
