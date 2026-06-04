@@ -80,3 +80,8 @@ jobs:
             echo "$errors error(s) found."
             exit 1
           fi
+
+      - name: Run sample logic tests
+        run: |
+          chmod +x scripts/test-samples.sh
+          bash scripts/test-samples.sh
