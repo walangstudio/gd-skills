@@ -57,9 +57,9 @@ The **game-architect** agent will:
 
 4. **Delegate** to specialists:
    - **full-game-builder**: Menus, settings, saves, audio
-   - **[engine]-specialist**: Gameplay implementation
-   - **gameplay-designer**: Mechanic refinement
-   - **level-architect**: Level design
+   - **[engine]-specialist**: Gameplay implementation, level layout
+   - **game-feel-specialist**: Polish, juice, balance tuning
+   - **integration-validator**: Cross-component wiring check
 
 5. **Integrate** all systems to create a cohesive, playable game
 

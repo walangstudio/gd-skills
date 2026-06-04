@@ -44,12 +44,12 @@
         "description": "Check Luau formatting with StyLua (requires rokit toolchain)"
       },
       {
-        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.script$\"",
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.(script|gui_script|render_script)$\"",
         "hooks": [{
           "type": "command",
           "command": "node hooks/check-defold-types.js \"${tool_input.file_path}\""
         }],
-        "description": "Check Defold .script idioms (plain Lua, hashed message ids, lifecycle callbacks)"
+        "description": "Check Defold .script/.gui_script/.render_script idioms (plain Lua, hashed message ids, lifecycle callbacks)"
       },
       {
         "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.cs$\"",

@@ -18,11 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roblox and Unreal code examples in platformer template
 - MCP config examples for Unity, Unreal, Roblox, and Web engines
 - CHANGELOG.md and CONTRIBUTING.md
+- **Defold as a first-class 6th engine**: `defold-specialist` agent, `defold-style` rule, `defold-mode` context, `defold-patterns` skill, `/setup-defold`, MCP config, and a `.script`/`.gui_script`/`.render_script` advisory hook; Defold code in all 9 shared component skills and all 11 genre templates
+- **Opt-in depth layer** (never slows the `/create-*` path): version-pinned engine-reference docs (`docs/engine-reference/`), architecture pattern guides (`guides/`), entity registry + `/consistency-check`, session-state checkpoint + `/checkpoint` + SessionStart resume hook, opt-in review gates + `/review-gate` (`guides/review-gates.md`), `/build-team`, verification-driven dev + `/acceptance`, prompt cookbook, and doc templates (`docs/templates/`)
+- Discipline agents: `narrative-designer`, `accessibility-specialist`, `security-engineer`
+- Depth directories (`docs`, `guides`, `design`) now installed for the Claude target
 
 ### Fixed
 - Command injection vulnerability in hooks.json — moved inline `node -e` to standalone .js scripts
 - Flying enemy movement bug in platformer template (conflicting velocity + position writes)
 - Copilot uninstaller now properly cleans gd-skills content from `copilot-instructions.md`
+- README agent/command counts corrected (20 agents, 38 commands) across the intro, the `## All N Commands` header, and the architecture tree
+- SessionStart checkpoint hook now reads the user's project cwd (from the hook stdin payload) instead of the plugin dir, and caps its output; the shipped checkpoint is now `active.example.md` so the placeholder is never dumped
+- Defold PostToolUse matcher now also covers `.gui_script`/`.render_script`
+- Removed dead delegation targets (`gameplay-designer`, `level-architect`); broadened `validate-references.sh` and the README link-check to catch 2-part and single-word command/agent names
 
 ### Security
 - Hooks no longer use inline shell-interpolated file paths
