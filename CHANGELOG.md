@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Opt-in depth layer** (never slows the `/create-*` path): version-pinned engine-reference docs (`docs/engine-reference/`), architecture pattern guides (`guides/`), entity registry + `/consistency-check`, session-state checkpoint + `/checkpoint` + SessionStart resume hook, opt-in review gates + `/review-gate` (`guides/review-gates.md`), `/build-team`, verification-driven dev + `/acceptance`, prompt cookbook, and doc templates (`docs/templates/`)
 - Discipline agents: `narrative-designer`, `accessibility-specialist`, `security-engineer`
 - Depth directories (`docs`, `guides`, `design`) now installed for the Claude target
+- Self-repair loop: `/self-repair` + `guides/self-repair-loop.md` — with a connected engine MCP, run → screenshot → diff vs intent → auto-fix (Godot/Defold first)
+- `guides/rag-setup.md` — optional power-user path to index engine reference docs into a mememo vector store
 
 ### Fixed
 - Command injection vulnerability in hooks.json — moved inline `node -e` to standalone .js scripts
