@@ -48,6 +48,7 @@ c04a9fbdd3cd148687d5689093a9d41144748f57  commands/create-tower-defense.md
 c8bc8d91587e60847119ca59ea3703288861cbd7  commands/debug-game.md
 4ff74e7bf18c8a88c9249cb30029fc73cd86b99f  commands/optimize-performance.md
 e1b8bf597b4087ea1d72024f73c1749b3d3b494f  commands/review-gate.md
+a712d38e5b00eb972b1e791df69472210ffcb6b1  commands/self-repair.md
 7fe384fc1e65497c16ab96bb0ce3dba1e8e16434  commands/setup-defold.md
 dc2efafba31ce190994e76885be25303cd98ef89  commands/setup-godot.md
 072f0447f31270d6a952bd11dbad0daf0d4c0943  commands/setup-roblox-toolchain.md

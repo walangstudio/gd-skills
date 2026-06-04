@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **38 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **39 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
 
 ### Create a Full Game in Seconds
 
@@ -187,7 +187,7 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 /setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 38 Commands
+## All 39 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -224,13 +224,14 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/add-game-feel` | Add juice and polish |
 | `/optimize-performance` | Performance optimization |
 
-### Debugging & Validation (4)
+### Debugging & Validation (5)
 | Command | Description |
 |---------|-------------|
 | `/debug-game` | Debug specific issue |
 | `/debug-existing` | Full project audit |
 | `/validate-integration` | Cross-component wiring check (events, references, data flow) |
 | `/consistency-check` | Cross-check code/docs against the entity registry (stats, items, formulas) |
+| `/self-repair` | Run via engine MCP, screenshot, diff vs intent, auto-fix (Godot/Defold first) |
 
 ### Engine Setup (7)
 | Command | Description |
@@ -310,7 +311,7 @@ Coding standards automatically applied per engine:
 gd-skills/
 ├── agents/           (20 specialized agents)
 ├── skills/           (28 skills with code templates)
-├── commands/         (38 slash commands)
+├── commands/         (39 slash commands)
 ├── rules/            (7 coding standards)
 ├── hooks/            (automation)
 ├── scripts/
@@ -335,6 +336,8 @@ Beyond fast generation, gd-skills ships reference material agents consult on dem
 - **Doc templates** (`docs/templates/`) — GDD, ADR, technical design, content plan, milestone plan, playtest report.
 - **Prompt cookbook** (`guides/prompt-cookbook.md`) — curated, copy-paste prompts per genre/system/engine that actually land.
 - **Verification-driven dev + `/acceptance`** (`guides/verification-driven-dev.md`) — testable Given/When/Then criteria + per-engine failing test stubs; active in lean/full review mode.
+- **Self-repair loop + `/self-repair`** (`guides/self-repair-loop.md`) — with a connected engine MCP, run the game, screenshot, diff vs intent, and auto-fix visible defects (Godot/Defold first). Requires an engine MCP; explains setup if absent.
+- **RAG setup** (`guides/rag-setup.md`) — optional power-user path to index the engine reference docs into a mememo vector store for live, version-correct API retrieval.
 
 ## License
 
