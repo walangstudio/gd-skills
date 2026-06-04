@@ -16,11 +16,20 @@ samples/<engine>/<name>/
 
 `<engine>` is one of: `godot`, `unity`, `unreal`, `roblox`, `defold`, `web`.
 
-## Status
+## Verification policy
 
-Godot and Defold samples land first (open, scriptable, fast to verify in-engine);
-other engines follow. Each sample is verified to build/run in its engine before it
-is added — a sample that hasn't been run in the engine is not committed here.
+Every sample's **testable logic is unit-tested headless** (the logic is split from
+rendering so it runs without an engine — see the web sample's `test.js`). Runtime
+and visual behavior is **verified in-engine where the engine is available**, and
+each `NOTES.md` states exactly what was and wasn't verified. A sample never claims
+to run if its run wasn't checked.
+
+## Available
+
+- **`web/coin-collector`** — vanilla HTML5 canvas game (no build, no deps). Logic unit-tested via `node test.js`; open `index.html` to play.
+
+Godot and Defold samples follow (open + scriptable, fast to verify in-editor);
+Unity/Unreal after.
 
 ## Large assets
 
