@@ -143,15 +143,13 @@ Delegate to appropriate agents:
 - Camera system
 - Scene setup
 
-**gameplay-designer** agent for:
-- Mechanic refinement
-- Game feel
-- Balance tuning
+**game-feel-specialist** agent for:
+- Game feel and juice
+- Polish and balance tuning
 
-**level-architect** agent for:
-- Level layout
-- Progression design
-- Difficulty curve
+**[engine]-specialist** agent for level work:
+- Level layout and scene setup
+- Progression and difficulty pacing
 
 **Discipline specialists** (delegate when the game needs them):
 - `narrative-designer` for story, lore, dialogue structure, characters, quests
@@ -324,7 +322,7 @@ Based on answers, create the complete game:
    - Create 5 levels with increasing difficulty
    - Integrate all systems
 
-3. Invoke gameplay-designer agent (for polish):
+3. Invoke game-feel-specialist agent (for polish):
    - Tune jump feel
    - Balance enemy placement
    - Adjust difficulty curve

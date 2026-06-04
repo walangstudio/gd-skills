@@ -16,7 +16,7 @@ flow.
 
 ## How It Works
 
-1. Read the current `design/session/active.md` (create from the template if missing).
+1. Read the current `design/session/active.md` (create it from `design/session/active.example.md` if missing).
 2. Update the fields from the current work:
    - **Engine**, **Game**, **Current milestone**
    - **Done** — append what was just completed

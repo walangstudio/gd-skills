@@ -293,12 +293,6 @@ Before delivering, verify:
 
 ## Review Gates (opt-in)
 
-Check the review mode in `design/session/active.md` (`- **Review mode**:` line; absent = `solo`).
-
-- **solo** (default) — generate the full template in one shot. No gates, no added prompts. This is the headline fast path; keep it fast.
-- **lean** — after assembling the template, run an integration gate (`integration-validator`, plus `/consistency-check` if a registry exists) before declaring done.
-- **full** — additionally run a `game-architect` design check on the chosen genre/options before generating.
-
-A gate returns APPROVE / CONCERNS / REJECT and never edits code. See `guides/review-gates.md`. In `solo` mode, skip this section entirely.
+Read the review mode from `design/session/active.md` (`- **Review mode**:` line; absent or unreadable = `solo`). In `solo` (default) generate the full template in one shot — no gates, no added prompts; this is the headline fast path. In `lean`/`full`, follow the gate procedure and verdict handling in `guides/review-gates.md` (an `integration-validator` gate before declaring done; `full` adds a `game-architect` design check before generating). Gates never edit code.
 
 **Remember**: Templates accelerate game creation while maintaining quality. Every template should feel like a complete, professional game.

@@ -187,7 +187,7 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 /setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 37 Commands
+## All 38 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -308,9 +308,9 @@ Coding standards automatically applied per engine:
 
 ```
 gd-skills/
-├── agents/           (17 specialized agents)
+├── agents/           (20 specialized agents)
 ├── skills/           (28 skills with code templates)
-├── commands/         (35 slash commands)
+├── commands/         (38 slash commands)
 ├── rules/            (7 coding standards)
 ├── hooks/            (automation)
 ├── scripts/

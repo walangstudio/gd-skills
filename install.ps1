@@ -92,7 +92,7 @@ function Get-TargetLabel {
 function Get-TargetComponents {
     param([string]$TargetName)
     switch ($TargetName) {
-        "claude"   { return @("agents", "skills", "commands", "rules") }
+        "claude"   { return @("agents", "skills", "commands", "rules", "docs", "guides", "design") }
         "cursor"   { return @("rules") }
         "windsurf" { return @("rules") }
         "copilot"  { return @("rules") }

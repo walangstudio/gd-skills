@@ -1,9 +1,9 @@
 # Active Session Checkpoint
 
 <!--
-Portable, zero-dependency checkpoint for the current game project. The
-show-session-state hook prints this at session start so you can resume instantly.
-Update it after each milestone with /checkpoint (or by hand). Keep it short.
+TEMPLATE. Copy this to design/session/active.md in your game project (the
+/checkpoint command does this for you). The show-session-state SessionStart hook
+prints your project's active.md so you can resume instantly. Keep it short.
 If a mememo MCP is available, it backs this with persistent agent memory; this
 file is the fallback that always works.
 -->
