@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tower Defense</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 16px; }
+    canvas { background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <div id="hud">Gold: <span id="gold">0</span> &nbsp;|&nbsp; Lives: <span id="lives">0</span>
+    &nbsp;|&nbsp; Wave: <span id="wave">1</span> &nbsp;|&nbsp; Click to place a tower</div>
+  <canvas id="game" width="480" height="320"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

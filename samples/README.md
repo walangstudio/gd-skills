@@ -34,6 +34,8 @@ Open any `index.html` to play.
 - **`web/snake`** — grid movement, grow on eat, wall/self collision. Discrete-tick loop, injected RNG. (7 test groups)
 - **`web/breakout`** — paddle + ball, brick reflection, lives/win/lose. Sub-stepped ball (no tunneling). (13 test groups)
 - **`web/platformer`** — gravity, jump (grounded-only, no double-jump), AABB platform collision, reach the goal. Sub-stepped fall (no tunneling). (10 test groups)
+- **`web/tower-defense`** — waypoint enemy pathing, click-to-place towers, furthest-along targeting, gold/lives/waves. (9 test groups)
+- **`web/match3`** — swap-or-revert, run-scan match detection, gravity + RNG-injected refill, cascades. (8 test groups)
 
 Every sample's `test.js` runs in CI (`scripts/test-samples.sh`), so the logic can't
 silently regress. Godot and Defold samples follow (open + scriptable, fast to
