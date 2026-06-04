@@ -137,6 +137,80 @@ public class CharacterStats : ScriptableObject
 }
 ```
 
+### Defold
+
+Stats are pure data, so put the math in a `require`'d module (no game object needed) and let a thin character script own one instance. Base stats are tunable via `go.property` on the character; derived stats are computed functions. Leveling consumes experience and posts level_up.
+
+```lua
+-- scripts/stats.lua  (shared module, returns a table)
+local M = {}
+
+function M.new(base)
+	return {
+		level = base.level or 1,
+		experience = 0,
+		strength = base.strength or 10,
+		dexterity = base.dexterity or 10,
+		intelligence = base.intelligence or 10,
+		vitality = base.vitality or 10,
+	}
+end
+
+function M.max_health(s) return s.vitality * 10 + s.level * 5 end
+function M.max_mana(s)   return s.intelligence * 5 + s.level * 3 end
+function M.attack(s)     return s.strength * 2 + s.level end
+function M.defense(s)    return s.vitality + s.level end
+
+function M.exp_for_level(lvl) return math.floor(100 * (lvl ^ 1.5)) end
+
+-- returns how many levels were gained so the caller can react
+function M.add_experience(s, amount)
+	s.experience = s.experience + amount
+	local gained = 0
+	while s.experience >= M.exp_for_level(s.level + 1) do
+		s.experience = s.experience - M.exp_for_level(s.level + 1)
+		s.level = s.level + 1
+		s.strength = s.strength + 1
+		s.dexterity = s.dexterity + 1
+		s.intelligence = s.intelligence + 1
+		s.vitality = s.vitality + 1
+		gained = gained + 1
+	end
+	return gained
+end
+
+return M
+```
+
+```lua
+-- character.script
+local stats = require("scripts.stats")
+
+go.property("level", 1)
+go.property("strength", 10)
+go.property("dexterity", 10)
+go.property("intelligence", 10)
+go.property("vitality", 10)
+
+function init(self)
+	self.stats = stats.new({
+		level = self.level, strength = self.strength, dexterity = self.dexterity,
+		intelligence = self.intelligence, vitality = self.vitality,
+	})
+	self.health = stats.max_health(self.stats)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("gain_experience") then
+		local levels = stats.add_experience(self.stats, message.amount)
+		if levels > 0 then
+			self.health = stats.max_health(self.stats)
+			msg.post("/hud#gui", "level_up", { level = self.stats.level })
+		end
+	end
+end
+```
+
 ### Quest System
 ```gdscript
 class_name QuestSystem
@@ -217,6 +291,72 @@ class Objective:
     var current: int = 0
 ```
 
+### Defold
+
+The quest log is a controller script plus a plain-data module. Quests are tables of objectives with required/current counts. Gameplay posts quest_progress (for example, on an enemy_killed broadcast); the controller advances the matching objective, and when all are met it grants rewards by posting gain_experience and add_gold, then posts quest_completed.
+
+```lua
+-- scripts/quests.lua  (shared module)
+local M = {}
+
+function M.is_complete(quest)
+	for _, obj in ipairs(quest.objectives) do
+		if obj.current < obj.required then return false end
+	end
+	return true
+end
+
+function M.advance(quest, objective_id, amount)
+	for _, obj in ipairs(quest.objectives) do
+		if obj.id == objective_id then
+			obj.current = math.min(obj.current + amount, obj.required)
+		end
+	end
+end
+
+return M
+```
+
+```lua
+-- quest_log.script
+local quests = require("scripts.quests")
+
+function init(self)
+	self.active = {}        -- id -> quest table
+	self.completed = {}     -- id -> true
+end
+
+local function give_rewards(self, quest)
+	if quest.rewards.exp then
+		msg.post("/player#character", "gain_experience", { amount = quest.rewards.exp })
+	end
+	if quest.rewards.gold then
+		msg.post("/player#inventory", "add_gold", { amount = quest.rewards.gold })
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_quest") then
+		local q = message.quest
+		if not self.completed[q.id] and not self.active[q.id] then
+			for _, obj in ipairs(q.objectives) do obj.current = 0 end
+			self.active[q.id] = q
+			msg.post("/hud#gui", "quest_started", { id = q.id, title = q.title })
+		end
+	elseif message_id == hash("quest_progress") then
+		for id, q in pairs(self.active) do
+			quests.advance(q, message.objective, message.amount or 1)
+			if quests.is_complete(q) then
+				self.active[id] = nil
+				self.completed[id] = true
+				give_rewards(self, q)
+				msg.post("/hud#gui", "quest_completed", { id = id })
+			end
+		end
+	end
+end
+```
+
 ### Dialogue System
 ```gdscript
 class_name DialogueSystem
@@ -293,6 +433,74 @@ class DialogueChoice:
     var conditions: Dictionary = {}  # Optional requirements
 ```
 
+### Defold
+
+Dialogue is a GUI scene driven by a `.gui_script`. An NPC posts start_dialogue with a dialogue table (npc_name + nodes, each node a text plus optional choices). The script shows the current node, builds choice buttons (or a continue button), and walks the node graph on input until a node's next is below zero, then posts dialogue_ended.
+
+```lua
+-- dialogue.gui_script
+function init(self)
+	self.name_node = gui.get_node("name")
+	self.text_node = gui.get_node("text")
+	self.choice_template = gui.get_node("choice")   -- hidden prototype node
+	self.choices = {}
+end
+
+local function clear_choices(self)
+	for _, node in ipairs(self.choices) do gui.delete_node(node) end
+	self.choices = {}
+end
+
+local function show_node(self, index)
+	self.index = index
+	local node = self.dialogue.nodes[index]
+	gui.set_text(self.name_node, self.dialogue.npc_name)
+	gui.set_text(self.text_node, node.text)
+	clear_choices(self)
+	if node.choices and #node.choices > 0 then
+		for i, choice in ipairs(node.choices) do
+			local clone = gui.clone(self.choice_template)
+			gui.set_text(clone, choice.text)
+			gui.set_position(clone, vmath.vector3(0, -40 * i, 0))
+			gui.set_enabled(clone, true)
+			self.choices[i] = clone
+			self.choice_next = self.choice_next or {}
+			self.choice_next[i] = choice.next
+		end
+	else
+		self.continue_next = node.next
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_dialogue") then
+		self.dialogue = message.dialogue
+		gui.set_enabled(gui.get_node("panel"), true)
+		show_node(self, 1)
+	end
+end
+
+local function advance(self, next)
+	if not next or next < 1 or next > #self.dialogue.nodes then
+		gui.set_enabled(gui.get_node("panel"), false)
+		msg.post("/game#controller", "dialogue_ended")
+	else
+		show_node(self, next)
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id ~= hash("touch") or not action.pressed then return end
+	for i, node in ipairs(self.choices) do
+		if gui.pick_node(node, action.x, action.y) then
+			advance(self, self.choice_next[i])
+			return
+		end
+	end
+	if self.continue_next then advance(self, self.continue_next) end
+end
+```
+
 ### NPC System
 ```gdscript
 class_name NPC
@@ -336,6 +544,48 @@ func _on_interaction_area_body_entered(body: Node3D) -> void:
 func _on_interaction_area_body_exited(body: Node3D) -> void:
     if body.is_in_group("player"):
         can_interact = false
+```
+
+### Defold
+
+An NPC is a game object with a trigger collision object that gates interaction. While the player is in range and presses interact, it acts in priority order: offer a quest, open the shop (links to the inventory system), or start dialogue. It posts to the relevant controller rather than calling into it.
+
+```lua
+-- npc.script
+go.property("npc_name", hash("villager"))
+
+function init(self)
+	self.in_range = false
+	msg.post(".", "acquire_input_focus")
+	-- quests_available, shop_inventory, dialogue come from a data module keyed by npc_name
+	local data = require("scripts.npc_data")
+	self.config = data[self.npc_name] or {}
+	self.quests = self.config.quests or {}
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("interact") and action.pressed and self.in_range then
+		if #self.quests > 0 then
+			local quest = table.remove(self.quests, 1)
+			msg.post("/player#quest_log", "start_quest", { quest = quest })
+		elseif self.config.shop_inventory then
+			msg.post("/hud#shop", "open_shop", { inventory = self.config.shop_inventory })
+		elseif self.config.dialogue then
+			msg.post("/hud#dialogue", "start_dialogue", { dialogue = self.config.dialogue })
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.other_group == hash("player") then
+		self.in_range = message.enter
+		msg.post("/hud#gui", "interact_prompt", { visible = message.enter })
+	end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
 ```
 
 ---
@@ -417,6 +667,84 @@ class BattleAction:
     var target: BattleUnit
     var skill: Skill
     var item: ItemData
+```
+
+### Defold
+
+A battle is one controller script that walks phases: player turn, enemy turn, victory, defeat. Units are plain tables (stats + current_hp). The script collects a player action per party member, then runs the enemy turn with a `timer.delay` between actions for pacing, checking for a wipe on either side. It posts turn_changed and battle_ended to the HUD.
+
+```lua
+-- battle.script
+local PLAYER_TURN = hash("player_turn")
+local ENEMY_TURN = hash("enemy_turn")
+
+local function alive(unit) return unit.current_hp > 0 end
+
+local function any_alive(units)
+	for _, u in ipairs(units) do if alive(u) then return true end end
+	return false
+end
+
+local function execute(action)
+	if action.type == "attack" then
+		local dmg = math.max(1, action.actor.stats.attack - action.target.stats.defense)
+		action.target.current_hp = action.target.current_hp - dmg
+	elseif action.type == "skill" then
+		action.skill.apply(action.actor, action.target)
+	elseif action.type == "item" then
+		action.item.apply(action.target)
+	end
+end
+
+local function set_phase(self, phase)
+	self.phase = phase
+	msg.post("/hud#gui", "turn_changed", { phase = phase })
+end
+
+local function finish(self, victory)
+	msg.post("/hud#gui", "battle_ended", { victory = victory })
+end
+
+local function enemy_turn(self)
+	set_phase(self, ENEMY_TURN)
+	local i = 0
+	local function step()
+		i = i + 1
+		local enemy = self.enemies[i]
+		if not enemy then
+			if not any_alive(self.party) then return finish(self, false) end
+			self.unit_index = 1
+			return set_phase(self, PLAYER_TURN)
+		end
+		if alive(enemy) then
+			execute(enemy.choose_action(self.party))
+		end
+		timer.delay(0.5, false, step)
+	end
+	step()
+end
+
+function init(self)
+	self.party = {}
+	self.enemies = {}
+	self.unit_index = 1
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_battle") then
+		self.party = message.party
+		self.enemies = message.enemies
+		self.unit_index = 1
+		set_phase(self, PLAYER_TURN)
+	elseif message_id == hash("player_action") then
+		if self.phase ~= PLAYER_TURN then return end
+		message.action.actor = self.party[self.unit_index]
+		execute(message.action)
+		if not any_alive(self.enemies) then return finish(self, true) end
+		self.unit_index = self.unit_index + 1
+		if self.unit_index > #self.party then enemy_turn(self) end
+	end
+end
 ```
 
 ---

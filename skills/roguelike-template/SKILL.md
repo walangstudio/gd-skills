@@ -163,6 +163,80 @@ public class RunManager : MonoBehaviour
 }
 ```
 
+### Defold
+
+The run manager is a single controller script. Run stats are a plain Lua table; the seed feeds `math.randomseed` so a run is reproducible. Permadeath is just `end_run`: the run goes inactive, meta-currency is awarded by messaging the meta-progression object, and a `run_ended` broadcast lets the rest of the game reset. No singletons or inheritance — other systems message this one.
+
+```lua
+go.property("max_floors", 10)
+
+local MSG_RUN_STARTED = hash("run_started")
+local MSG_FLOOR_CHANGED = hash("floor_changed")
+local MSG_RUN_ENDED = hash("run_ended")
+
+function init(self)
+	self.current_seed = 0
+	self.current_floor = 0
+	self.is_run_active = false
+	self.run_stats = {}
+end
+
+local function advance_floor(self)
+	self.current_floor = self.current_floor + 1
+	if self.current_floor > self.max_floors then
+		msg.post("#", "end_run", { victory = true })
+		return
+	end
+	self.run_stats.floors_cleared = self.current_floor
+	msg.post("#", MSG_FLOOR_CHANGED, { floor = self.current_floor })
+end
+
+local function start_run(self, custom_seed)
+	self.current_seed = (custom_seed and custom_seed ~= 0) and custom_seed or os.time()
+	math.randomseed(self.current_seed)
+	self.current_floor = 0
+	self.is_run_active = true
+	self.run_stats = {
+		kills = 0, damage_dealt = 0, damage_taken = 0,
+		items_collected = 0, gold_earned = 0,
+		time_start = socket.gettime(), floors_cleared = 0,
+	}
+	msg.post("#", MSG_RUN_STARTED, { seed = self.current_seed })
+	advance_floor(self)
+end
+
+local function calculate_meta_currency(self)
+	local base = self.run_stats.floors_cleared * 10
+	if self.run_stats.victory then base = base * 3 end
+	return base + self.run_stats.kills
+end
+
+local function end_run(self, victory)
+	self.is_run_active = false
+	self.run_stats.victory = victory
+	self.run_stats.time_elapsed = socket.gettime() - self.run_stats.time_start
+	self.run_stats.seed = self.current_seed
+	local currency = calculate_meta_currency(self)
+	self.run_stats.meta_currency = currency
+	msg.post("/meta#controller", "add_currency", { amount = currency })
+	msg.post("#", MSG_RUN_ENDED, { victory = victory, stats = self.run_stats })
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_run") then
+		start_run(self, message.seed)
+	elseif message_id == hash("advance_floor") then
+		advance_floor(self)
+	elseif message_id == hash("end_run") then
+		end_run(self, message.victory)
+	elseif message_id == hash("add_kill") then
+		self.run_stats.kills = (self.run_stats.kills or 0) + 1
+	elseif message_id == hash("add_gold") then
+		self.run_stats.gold_earned = (self.run_stats.gold_earned or 0) + message.amount
+	end
+end
+```
+
 ### Procedural Dungeon Generator
 ```gdscript
 class_name DungeonGenerator
@@ -298,6 +372,115 @@ func is_valid_pos(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < grid_size.x and pos.y >= 0 and pos.y < grid_size.y
 ```
 
+### Defold
+
+Rooms are plain Lua tables on a coarse grid (no `RoomData` class — composition, not inheritance). The walk drops connected rooms from the start toward a boss; the per-floor seed makes layout deterministic. A grid position is keyed as a string so the placed set is a simple table. The result is sent as a message for the floor builder to spawn rooms via a collection factory.
+
+```lua
+go.property("min_rooms", 6)
+go.property("max_rooms", 12)
+go.property("grid_w", 5)
+go.property("grid_h", 5)
+
+local ROOM_TYPES = { combat = 1, treasure = 2, shop = 3, rest = 4, boss = 5, start = 6, elite = 7 }
+local DIRS = { {1,0}, {-1,0}, {0,-1} }
+
+local function key(x, y) return x .. "," .. y end
+
+local function is_valid_pos(self, x, y)
+	return x >= 1 and x <= self.grid_w and y >= 1 and y <= self.grid_h
+end
+
+local function create_room(x, y, type)
+	return { x = x, y = y, type = type, connections = {}, enemies = {}, loot = {}, cleared = false }
+end
+
+local function pick_room_type(current, total, floor_num)
+	if current == total - 2 then return ROOM_TYPES.rest end
+	local roll = math.random()
+	if roll < 0.5 then return ROOM_TYPES.combat
+	elseif roll < 0.65 then return ROOM_TYPES.treasure
+	elseif roll < 0.75 then return ROOM_TYPES.shop
+	elseif roll < 0.85 and floor_num > 2 then return ROOM_TYPES.elite
+	else return ROOM_TYPES.combat end
+end
+
+local function get_enemy_set(floor_num, elite)
+	local count = elite and 1 or (math.random(2, 4) + math.floor(floor_num / 3))
+	local pool = { "slime", "skeleton", "bat", "goblin" }
+	if floor_num > 3 then
+		pool[#pool + 1] = "mage"; pool[#pool + 1] = "knight"; pool[#pool + 1] = "golem"
+	end
+	if elite then pool = { "elite_knight", "elite_mage", "mini_boss" } end
+	local enemies = {}
+	for _ = 1, count do enemies[#enemies + 1] = pool[math.random(#pool)] end
+	return enemies
+end
+
+local function get_boss(floor_num)
+	local bosses = { "slime_king", "skeleton_lord", "dragon", "lich" }
+	return bosses[math.min(math.floor(floor_num / 3) + 1, #bosses)]
+end
+
+local function populate_rooms(rooms, floor_num)
+	for _, room in ipairs(rooms) do
+		if room.type == ROOM_TYPES.combat then
+			room.enemies = get_enemy_set(floor_num, false)
+		elseif room.type == ROOM_TYPES.elite then
+			room.enemies = get_enemy_set(floor_num, true)
+		elseif room.type == ROOM_TYPES.boss then
+			room.enemies = { get_boss(floor_num) }
+		end
+	end
+end
+
+local function generate(self, floor_num, floor_seed)
+	math.randomseed(floor_seed + floor_num)
+	local rooms = {}
+	local placed = {}
+
+	local sx, sy = math.floor(self.grid_w / 2) + 1, self.grid_h
+	local start_room = create_room(sx, sy, ROOM_TYPES.start)
+	rooms[#rooms + 1] = start_room
+	placed[key(sx, sy)] = start_room
+
+	local room_count = math.random(self.min_rooms, self.max_rooms)
+	local cx, cy = sx, sy
+	local attempts = 0
+	while #rooms < room_count and attempts < 100 do
+		attempts = attempts + 1
+		local d = DIRS[math.random(#DIRS)]
+		local nx, ny = cx + d[1], cy + d[2]
+		if is_valid_pos(self, nx, ny) and not placed[key(nx, ny)] then
+			local room = create_room(nx, ny, pick_room_type(#rooms, room_count, floor_num))
+			table.insert(room.connections, key(cx, cy))
+			table.insert(placed[key(cx, cy)].connections, key(nx, ny))
+			rooms[#rooms + 1] = room
+			placed[key(nx, ny)] = room
+			cx, cy = nx, ny
+		end
+	end
+
+	local bx, by = cx, cy - 1
+	if is_valid_pos(self, bx, by) then
+		local boss = create_room(bx, by, ROOM_TYPES.boss)
+		table.insert(boss.connections, key(cx, cy))
+		table.insert(placed[key(cx, cy)].connections, key(bx, by))
+		rooms[#rooms + 1] = boss
+	end
+
+	populate_rooms(rooms, floor_num)
+	return rooms
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("generate") then
+		local rooms = generate(self, message.floor, message.seed)
+		msg.post(sender, "dungeon_generated", { rooms = rooms })
+	end
+end
+```
+
 ### Item/Ability Randomization
 ```gdscript
 class_name ItemRandomizer
@@ -380,6 +563,89 @@ func has_tag(tag: String) -> bool:
 	return false
 ```
 
+### Defold
+
+The item pool is a plain Lua list of item tables; each item is data with a rarity, effects, and tags. Weighted selection favors rarer items by a configurable boost and multiplies weight for items that share a tag with already-acquired items (synergy). No class hierarchy — items are just tables registered into the pool.
+
+```lua
+local RARITY = { common = 1, uncommon = 2, rare = 3, legendary = 4 }
+local RARITY_WEIGHTS = { [1] = 50, [2] = 30, [3] = 15, [4] = 5 }
+
+function init(self)
+	self.item_pool = {}        -- list of item tables
+	self.acquired = {}         -- id -> true
+end
+
+local function register_item(self, item)
+	self.item_pool[#self.item_pool + 1] = item
+end
+
+local function has_tag(self, tag)
+	for _, item in ipairs(self.item_pool) do
+		if self.acquired[item.id] then
+			for _, t in ipairs(item.tags or {}) do
+				if t == tag then return true end
+			end
+		end
+	end
+	return false
+end
+
+local function weighted_pick(self, pool, rarity_boost)
+	local weights = {}
+	local total = 0
+	for i, item in ipairs(pool) do
+		local w = RARITY_WEIGHTS[item.rarity] or 10
+		if item.rarity == RARITY.rare or item.rarity == RARITY.legendary then
+			w = w + rarity_boost
+		end
+		for _, tag in ipairs(item.tags or {}) do
+			if has_tag(self, tag) then w = w * 1.5 end
+		end
+		weights[i] = w
+		total = total + w
+	end
+	local roll = math.random() * total
+	local cumulative = 0
+	for i, item in ipairs(pool) do
+		cumulative = cumulative + weights[i]
+		if roll <= cumulative then return item, i end
+	end
+	return pool[#pool], #pool
+end
+
+local function get_random_items(self, count, rarity_boost)
+	local available = {}
+	for _, item in ipairs(self.item_pool) do
+		if not self.acquired[item.id] then available[#available + 1] = item end
+	end
+	local selected = {}
+	for _ = 1, count do
+		if #available == 0 then break end
+		local item, idx = weighted_pick(self, available, rarity_boost or 0)
+		selected[#selected + 1] = item
+		table.remove(available, idx)
+	end
+	return selected
+end
+
+local function acquire_item(self, item)
+	self.acquired[item.id] = true
+	msg.post("#", "item_acquired", { id = item.id })
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("register_item") then
+		register_item(self, message.item)
+	elseif message_id == hash("offer_items") then
+		local items = get_random_items(self, message.count, message.rarity_boost)
+		msg.post(sender, "item_offered", { items = items })
+	elseif message_id == hash("acquire_item") then
+		acquire_item(self, message.item)
+	end
+end
+```
+
 ### Meta-Progression
 ```gdscript
 class_name MetaProgression
@@ -453,6 +719,84 @@ func load_progress() -> void:
 			meta_currency = json.data.get("currency", 0)
 			upgrades = json.data.get("upgrades", {})
 			unlocked_items = json.data.get("unlocked", [])
+```
+
+### Defold
+
+Meta-currency, purchased upgrade levels, and unlocks survive across runs via `sys.save`/`sys.load`. The upgrade tree is a plain Lua table keyed by id. Currency awarded at the end of a run arrives as `add_currency` from the run manager; bonuses are queried by effect so the run manager can apply them at run start.
+
+```lua
+local function save_path()
+	return sys.get_save_file("roguelike", "meta")
+end
+
+local UPGRADE_TREE = {
+	max_health = { name = "Vitality", max_level = 5, costs = {50,100,200,400,800}, effect = "health_bonus", values = {10,20,35,50,75} },
+	damage = { name = "Strength", max_level = 5, costs = {50,100,200,400,800}, effect = "damage_bonus", values = {5,10,15,25,40} },
+	starting_gold = { name = "Inheritance", max_level = 3, costs = {100,250,500}, effect = "gold_bonus", values = {25,50,100} },
+	extra_choice = { name = "Luck", max_level = 2, costs = {200,500}, effect = "item_choices", values = {1,2} },
+	dash_upgrade = { name = "Agility", max_level = 1, costs = {300}, effect = "dash_count", values = {1} },
+}
+
+local function load_progress(self)
+	local data = sys.load(save_path())
+	self.meta_currency = data.currency or 0
+	self.upgrades = data.upgrades or {}
+	self.unlocked_items = data.unlocked or {}
+end
+
+local function save_progress(self)
+	sys.save(save_path(), {
+		currency = self.meta_currency,
+		upgrades = self.upgrades,
+		unlocked = self.unlocked_items,
+	})
+end
+
+function init(self)
+	load_progress(self)
+end
+
+local function add_currency(self, amount)
+	self.meta_currency = self.meta_currency + amount
+	msg.post("#", "currency_changed", { amount = self.meta_currency })
+	save_progress(self)
+end
+
+local function purchase_upgrade(self, upgrade_id)
+	local data = UPGRADE_TREE[upgrade_id]
+	local level = self.upgrades[upgrade_id] or 0
+	if level >= data.max_level then return false end
+	local cost = data.costs[level + 1]
+	if self.meta_currency < cost then return false end
+	self.meta_currency = self.meta_currency - cost
+	self.upgrades[upgrade_id] = level + 1
+	msg.post("#", "upgrade_purchased", { id = upgrade_id, level = level + 1 })
+	save_progress(self)
+	return true
+end
+
+local function get_bonus(self, effect)
+	local total = 0
+	for id, data in pairs(UPGRADE_TREE) do
+		if data.effect == effect then
+			local level = self.upgrades[id] or 0
+			if level > 0 then total = total + data.values[level] end
+		end
+	end
+	return total
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_currency") then
+		add_currency(self, message.amount)
+	elseif message_id == hash("purchase_upgrade") then
+		local ok = purchase_upgrade(self, message.id)
+		msg.post(sender, "purchase_result", { id = message.id, ok = ok })
+	elseif message_id == hash("query_bonus") then
+		msg.post(sender, "bonus", { effect = message.effect, value = get_bonus(self, message.effect) })
+	end
+end
 ```
 
 ---

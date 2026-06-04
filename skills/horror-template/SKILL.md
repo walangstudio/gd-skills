@@ -132,6 +132,60 @@ public class Flashlight : MonoBehaviour
 }
 ```
 
+### Defold
+
+A flashlight is a game object holding a spotlight sprite/model plus a light. Toggle from input, drain the battery in `update`, flicker the light's enabled state when low, and report level to the HUD. Battery pickups post add_battery.
+
+```lua
+-- flashlight.script
+go.property("max_battery", 100)
+go.property("drain_rate", 5)
+go.property("flicker_threshold", 20)
+
+local function set_visible(self, on)
+	msg.post("#light", on and "enable" or "disable")
+	msg.post("#cone", on and "enable" or "disable")
+end
+
+function init(self)
+	self.battery = self.max_battery
+	self.is_on = false
+	set_visible(self, false)
+end
+
+function update(self, dt)
+	if not self.is_on then return end
+	self.battery = math.max(0, self.battery - self.drain_rate * dt)
+	msg.post("/hud#gui", "battery_changed", { current = self.battery, max = self.max_battery })
+	if self.battery <= self.flicker_threshold then
+		set_visible(self, math.random() > 0.1)
+	end
+	if self.battery <= 0 then
+		self.is_on = false
+		set_visible(self, false)
+		msg.post("/player#script", "flashlight_died")
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("toggle_light") and action.pressed then
+		if self.is_on then
+			self.is_on = false
+			set_visible(self, false)
+		elseif self.battery > 0 then
+			self.is_on = true
+			set_visible(self, true)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_battery") then
+		self.battery = math.min(self.battery + message.amount, self.max_battery)
+	end
+end
+```
+
 ### Sanity System
 ```gdscript
 class_name SanitySystem
@@ -230,6 +284,70 @@ public class SanitySystem : MonoBehaviour
 }
 ```
 
+### Defold
+
+Sanity lives on a dedicated script the player owns. Other systems drive it by message: dark areas and nearby enemies post drain, lit areas post recover. As thresholds fall, it fires effect messages once each (whispers, shadows, hallucination, paranoia) for the HUD or post-processing to react to.
+
+```lua
+-- sanity.script
+go.property("max_sanity", 100)
+
+local EFFECTS = {
+	{ threshold = 80, effect = hash("whispers") },
+	{ threshold = 60, effect = hash("shadows") },
+	{ threshold = 40, effect = hash("hallucination") },
+	{ threshold = 20, effect = hash("paranoia") },
+}
+
+local function check_effects(self)
+	for i, e in ipairs(EFFECTS) do
+		if self.sanity <= e.threshold and not self.fired[i] then
+			self.fired[i] = true
+			msg.post("/hud#gui", "sanity_effect", { effect = e.effect })
+		end
+	end
+end
+
+function init(self)
+	self.sanity = self.max_sanity
+	self.fired = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("drain_sanity") then
+		self.sanity = math.max(0, self.sanity - message.amount)
+		msg.post("/hud#gui", "sanity_changed", { current = self.sanity, max = self.max_sanity })
+		check_effects(self)
+		if self.sanity <= 0 then
+			msg.post("/game#controller", "insanity")
+		end
+	elseif message_id == hash("recover_sanity") then
+		self.sanity = math.min(self.max_sanity, self.sanity + message.amount)
+		msg.post("/hud#gui", "sanity_changed", { current = self.sanity, max = self.max_sanity })
+	end
+end
+```
+
+The environment drives this without polling the sanity script. A dark-zone trigger posts each frame the player is inside it:
+
+```lua
+-- dark_zone.script  (trigger collision object)
+go.property("drain_per_second", 2)
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") and message.other_group == hash("player") then
+		if message.enter then self.inside = true
+		else self.inside = false end
+	end
+end
+
+function update(self, dt)
+	if self.inside then
+		msg.post("/player#sanity", "drain_sanity", { amount = self.drain_per_second * dt })
+	end
+end
+```
+
 ### Investigation System (Ghost Hunting)
 ```gdscript
 class_name InvestigationSystem
@@ -282,6 +400,62 @@ func get_possible_ghosts() -> Array[String]:
     return possible
 ```
 
+### Defold
+
+The investigation log is a single controller script. Equipment posts add_evidence; the controller dedupes, then once three pieces are in it matches against the ghost database and posts the identification. Evidence ids and ghost-profile tables are plain Lua data.
+
+```lua
+-- investigation.script
+local EMF_5 = hash("emf_5")
+local FREEZING = hash("freezing")
+local SPIRIT_BOX = hash("spirit_box")
+local GHOST_WRITING = hash("ghost_writing")
+local FINGERPRINTS = hash("fingerprints")
+local DOTS = hash("dots")
+
+local GHOSTS = {
+	spirit  = { EMF_5, SPIRIT_BOX, GHOST_WRITING },
+	wraith  = { EMF_5, SPIRIT_BOX, DOTS },
+	phantom = { SPIRIT_BOX, FINGERPRINTS, DOTS },
+}
+
+local function has(list, value)
+	for _, v in ipairs(list) do if v == value then return true end end
+	return false
+end
+
+local function identify(self)
+	if #self.order < 3 then return end
+	for name, profile in pairs(GHOSTS) do
+		local matches = 0
+		for _, e in ipairs(self.order) do
+			if has(profile, e) then matches = matches + 1 end
+		end
+		if matches >= 3 then
+			msg.post("/hud#gui", "ghost_identified", { ghost = name })
+			return
+		end
+	end
+end
+
+function init(self)
+	self.found = {}
+	self.order = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_evidence") then
+		local e = message.evidence
+		if not self.found[e] then
+			self.found[e] = true
+			table.insert(self.order, e)
+			msg.post("/hud#gui", "evidence_found", { evidence = e })
+			identify(self)
+		end
+	end
+end
+```
+
 ### Equipment (Investigation Tools)
 ```gdscript
 class_name GhostEquipment
@@ -319,6 +493,51 @@ func check_emf() -> void:
             reading_changed.emit(level)
             if level >= 5:
                 evidence_detected.emit(InvestigationSystem.EvidenceType.EMF_5)
+```
+
+### Defold
+
+An equipment tool is a held game object with a `kind` property. While active it queries the ghost's position (the ghost replies with where) and, for an EMF reader near the ghost, posts a reading and an add_evidence to the investigation controller. To avoid reaching into the ghost, the tool asks for its position by message and acts on the reply.
+
+```lua
+-- equipment.script
+go.property("kind", hash("emf_reader"))   -- emf_reader | thermometer | spirit_box
+go.property("detection_range", 5)
+
+local EMF_5 = hash("emf_5")
+
+function init(self)
+	self.active = false
+	self.ghost_pos = nil
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("toggle_tool") and action.pressed then
+		self.active = not self.active
+	end
+end
+
+function update(self, dt)
+	if not self.active then return end
+	-- ask the ghost where it is; it replies "ghost_position"
+	msg.post("/ghost#script", "where_are_you")
+	if self.ghost_pos and self.kind == hash("emf_reader") then
+		local dist = vmath.length(go.get_world_position() - self.ghost_pos)
+		if dist <= self.detection_range then
+			local level = math.floor(5 - (dist / self.detection_range) * 4)
+			msg.post("/hud#gui", "reading_changed", { value = level })
+			if level >= 5 then
+				msg.post("/investigation#script", "add_evidence", { evidence = EMF_5 })
+			end
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("ghost_position") then
+		self.ghost_pos = message.position
+	end
+end
 ```
 
 ### Stalker Enemy AI
@@ -400,6 +619,72 @@ func change_state(new_state: State) -> void:
 
 func can_sense_player() -> bool:
     return global_position.distance_to(target.global_position) < stalk_distance
+```
+
+### Defold
+
+The stalker is a kinematic game object running a small state machine in `update`: wander, stalk (follow at distance), hunt (close in for a timed burst), attack. It tracks the player's position from a player broadcast rather than reading the player's transform. Movement steps toward the target each frame using `dt`. Pathfinding (if used) goes through a Defold nav extension; here it steers directly toward the last known position.
+
+```lua
+-- stalker.script
+go.property("wander_speed", 2)
+go.property("stalk_speed", 3)
+go.property("hunt_speed", 5)
+go.property("stalk_distance", 15)
+go.property("attack_distance", 3)
+go.property("hunt_duration", 30)
+
+local WANDER = hash("wander")
+local STALK = hash("stalk")
+local HUNT = hash("hunt")
+local ATTACK = hash("attack")
+
+local function set_state(self, state)
+	self.state = state
+	if state == HUNT then self.hunt_timer = self.hunt_duration end
+end
+
+local function move_toward(self, dt, speed)
+	local to = self.target_pos - go.get_position()
+	to.y = 0
+	if vmath.length(to) > 0.01 then
+		go.set_position(go.get_position() + vmath.normalize(to) * speed * dt)
+	end
+end
+
+function init(self)
+	self.target_pos = go.get_position()
+	self.hunt_timer = 0
+	set_state(self, WANDER)
+end
+
+function update(self, dt)
+	local dist = vmath.length(self.target_pos - go.get_position())
+	if self.state == WANDER then
+		if math.random() < 0.01 and dist < self.stalk_distance then set_state(self, STALK) end
+	elseif self.state == STALK then
+		if dist > self.stalk_distance * 1.5 then set_state(self, WANDER)
+		elseif dist < self.attack_distance then set_state(self, ATTACK)
+		elseif math.random() < 0.001 then set_state(self, HUNT)
+		else move_toward(self, dt, self.stalk_speed) end
+	elseif self.state == HUNT then
+		self.hunt_timer = self.hunt_timer - dt
+		if self.hunt_timer <= 0 then set_state(self, STALK)
+		else
+			move_toward(self, dt, self.hunt_speed)
+			if dist < self.attack_distance then set_state(self, ATTACK) end
+		end
+	elseif self.state == ATTACK then
+		msg.post("/player#script", "attacked", { damage = 20 })
+		set_state(self, STALK)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("player_position") then
+		self.target_pos = message.position
+	end
+end
 ```
 
 ---
