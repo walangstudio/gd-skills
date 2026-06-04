@@ -320,6 +320,7 @@ gd-skills/
 ├── docs/             (version-pinned engine reference docs)
 ├── guides/           (architecture / design pattern guides)
 ├── design/           (entity registry + session-state templates)
+├── samples/          (runnable sample games; logic unit-tested headless)
 └── examples/         (configurations)
 ```
 
