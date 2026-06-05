@@ -6,7 +6,7 @@
 - Chaos is the physics backend (PhysX is gone in UE5). `UPrimitiveComponent` is the base for anything with collision (`UStaticMeshComponent`, `USkeletalMeshComponent`, `UCapsuleComponent`, `UBoxComponent`, `USphereComponent`).
 - `ECollisionChannel` (e.g. `ECC_Visibility`, `ECC_Camera`, `ECC_Pawn`, `ECC_WorldStatic`/`Dynamic`) drives trace/object queries; collision presets (Project Settings → Collision) bundle channel responses (Block/Overlap/Ignore).
 - Traces: `LineTraceSingleByChannel`, `LineTraceMultiByChannel`, `SweepSingleByChannel`; results land in `FHitResult`.
-- Collision events: `OnComponentHit` (blocking, needs `Notify Rigid Body Collision`/`bGenerateHitEvents`), `OnComponentBeginOverlap`/`EndOverlap` (needs `GenerateOverlapEvents` + at least one side set to Overlap).
+- Collision events: `OnComponentHit` (blocking, needs `bNotifyRigidBodyCollision` — editor label "Simulation Generates Hit Events", set via `SetNotifyRigidBodyCollision`), `OnComponentBeginOverlap`/`EndOverlap` (needs `bGenerateOverlapEvents`/`SetGenerateOverlapEvents` + at least one side set to Overlap).
 - `UCharacterMovementComponent` — drives `ACharacter` walking/falling/flying; don't use raw rigid-body sim for player locomotion.
 - `SetSimulatePhysics(true)` on a primitive enables Chaos rigid-body simulation (requires `Movable` mobility + collision enabled).
 
