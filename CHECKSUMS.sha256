@@ -1,12 +1,12 @@
 27295f156c845c8a322d074ff6ec54d9c2fbeea3  agents/accessibility-specialist.md
 4dbc1a041032dd8cda55fb9148c2343be319ad12  agents/ai-debugger.md
 71611105b3d6e4bd938478f11ff4c556815af13d  agents/audio-debugger.md
-9e1204703837dd215f1b80f501c91e674e1ae6cf  agents/component-builder.md
+8de3c3a28f5c499f0e300cb8827f78a619da15b6  agents/component-builder.md
 fdf7904f6aeec68e418ef1c71d4607c2ab0893d2  agents/defold-specialist.md
-ba7bf40d1289f31886d5575998bba6778d3e7149  agents/full-game-builder.md
-cc81bcfee7287f542235a41d6ecce7f8296c5e12  agents/game-architect.md
+1e19ab11d40331623beabbfad488ccfec2ffced3  agents/full-game-builder.md
+ec613cbd7f67a8eb1e39f4c772a6b2af7fc47b36  agents/game-architect.md
 1c469044144a9c15bd0e5c90787200e18ebcb49e  agents/game-feel-specialist.md
-a5aa5726ef53a5a1ca77ec3f9a796aa2bcec605c  agents/genre-template-master.md
+766cbb879c1569d917cee76515fb6ec4f6b8b70e  agents/genre-template-master.md
 557f3802dff920d98629ea175d1d9700e1f68822  agents/godot-specialist.md
 f9f60b71d269c008558378187fc7ae568085352b  agents/integration-validator.md
 88cdd4bcfe73fca7fff2f5107f340a4b76b733b0  agents/javascript-specialist.md
@@ -28,7 +28,7 @@ ce1288d45022967cb425f7c23578cdcb397b566f  agents/roblox-specialist.md
 e24e06e181fb9f13a69c06d1b2642b8ac67f07bc  commands/create-enemy.md
 eae7b3c973547d7b4bf6d9bed573ade4bad88230  commands/create-farming.md
 7453ffb3d3ca154d35cbfeb061081846c11a1a3a  commands/create-fps.md
-f938c95460c9a2bead322952c1c238feeb6d8bfd  commands/create-game.md
+a38471f9ba8d7f2928e6f733d2b89e60833d6f25  commands/create-game.md
 da29ee7e8c012fac836d7236e4b399ddc660e9b5  commands/create-health.md
 e35c33848980b8b5524b3a32acd8b500539d8e5c  commands/create-horror.md
 0a16ffadeb75ed2eef15f45cae668e919f05276b  commands/create-leaderboard.md
@@ -47,7 +47,7 @@ c04a9fbdd3cd148687d5689093a9d41144748f57  commands/create-tower-defense.md
 1d882dd1d517f578ce655a79260a84fa759c789c  commands/debug-existing.md
 c8bc8d91587e60847119ca59ea3703288861cbd7  commands/debug-game.md
 4ff74e7bf18c8a88c9249cb30029fc73cd86b99f  commands/optimize-performance.md
-e1b8bf597b4087ea1d72024f73c1749b3d3b494f  commands/review-gate.md
+eb73c6a6d813c350ff3afd691a5eadbe3cc143e4  commands/review-gate.md
 a712d38e5b00eb972b1e791df69472210ffcb6b1  commands/self-repair.md
 7fe384fc1e65497c16ab96bb0ce3dba1e8e16434  commands/setup-defold.md
 dc2efafba31ce190994e76885be25303cd98ef89  commands/setup-godot.md

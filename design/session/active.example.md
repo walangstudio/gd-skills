@@ -12,7 +12,7 @@ file is the fallback that always works.
 - **Game**: (one line — genre + what it is)
 - **Current milestone**: (what you're building right now)
 - **Review mode**: solo
-  <!-- solo (no gates, default) | lean (phase gates) | full (gate every step). Set with /review-gate. -->
+  <!-- Output is always auto-validated. Mode adds DESIGN rigor: solo (default, no extra gates) | lean (phase gate) | full (gate every step). Set with /review-gate. -->
 
 
 ## Done

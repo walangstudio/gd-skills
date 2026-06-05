@@ -1,18 +1,20 @@
 # Review Gates
 
-> Opt-in quality checkpoints between phases. Default is **solo** — no gates — so the fast `/create-*` path is never slowed.
+> Tiered DESIGN rigor on top of the baseline. Baseline autonomous validation
+> (`guides/autonomous-validation.md`) always runs — these gates add design/architecture
+> sign-off for teams and shipping projects.
 
 ## What it is
 
-A review gate is a checkpoint where a reviewer (the architect or a specialist) signs off before work advances to the next phase. gd-skills borrows the idea from full-studio workflows but makes it **opt-in and tiered**, so a game-jam dev moves at full speed and a team can be as rigorous as it wants.
+A review gate is a checkpoint where a reviewer (the architect or a specialist) signs off before work advances to the next phase. **This is separate from validation:** every build self-validates its output regardless of mode (see `guides/autonomous-validation.md`). Review gates add *extra design rigor* — they are tiered so a game-jam dev moves fast and a team can be as rigorous as it wants.
 
 ## The three modes
 
-| Mode | Gates run | Use when |
-|------|-----------|----------|
-| **solo** (default) | none | game jams, prototypes, the one-shot `/create-*` flow — maximum speed |
-| **lean** | only phase gates (before moving to the next major phase) | solo devs who want a sanity check at milestones |
-| **full** | every step (design, architecture, each system, release) | teams, learning, anything shipping to players |
+| Mode | Adds (on top of baseline validation) | Use when |
+|------|--------------------------------------|----------|
+| **solo** (default) | nothing extra — output is still validated and self-fixed | game jams, prototypes, the one-shot `/create-*` flow |
+| **lean** | a design/architecture gate at phase boundaries | solo devs who want a design sanity check at milestones |
+| **full** | a design gate before each system + at every phase | teams, learning, anything shipping to players |
 
 Set the mode in `design/session/active.md`:
 
@@ -20,7 +22,7 @@ Set the mode in `design/session/active.md`:
 - **Review mode**: solo
 ```
 
-If the line is absent, the mode is **solo**. Override per run with `/review-gate <mode>`.
+If the line is absent, the mode is **solo**. Override per run with `/review-gate <mode>`. Note: `solo` does NOT mean "no checks" — the build still runs the autonomous validation loop; `solo` just skips the extra design gates.
 
 ## How a gate works
 
@@ -30,7 +32,7 @@ When a gate fires, the reviewer returns one verdict:
 - **CONCERNS** — proceed only if the user accepts the listed concerns; otherwise revise.
 - **REJECT** — stop, fix the blockers, re-gate.
 
-A gate never edits code. It reads the artifact (a design doc, the assembled systems, the entity registry) and returns the verdict + a short rationale. In `solo` mode no gate fires at all — builders skip the gate section entirely.
+A gate never edits code. It reads the artifact (a design doc, the assembled systems, the entity registry) and returns the verdict + a short rationale. In `solo` mode these design gates don't fire — but the build still runs its autonomous validation loop and self-fixes, so the output is verified either way.
 
 ## Phase gates (lean + full)
 
@@ -45,15 +47,15 @@ In `full` mode each system added (player, combat, save, UI) gets a quick design 
 
 ## Builders and gates
 
-`full-game-builder`, `component-builder`, and `genre-template-master` each read the review mode and only invoke a gate when the mode is `lean` or `full`. In `solo` they behave exactly as before — no extra prompts, no waiting. This is what keeps the generator fast by default.
+`full-game-builder`, `component-builder`, and `genre-template-master` always run the autonomous validation loop, and additionally invoke a design gate when the mode is `lean` or `full`. In `solo` they skip the extra design gates but still validate and self-fix the output — that's what keeps the generator fast *without* handing back broken games.
 
-## When NOT to use gates
+## When to raise the mode
 
-- Prototypes and jams — stay in `solo`.
-- A single small component — the gate overhead isn't worth it.
-- When the user explicitly wants speed over rigor.
+- Stay in `solo` for jams and prototypes — the output is still validated.
+- Use `lean` when you want a design sanity check at milestones on a real project.
+- Use `full` for teams, learning, or anything shipping to players.
 
-Gates are a tool for confidence on real projects, not a tax on every action.
+Gates add design confidence on real projects; they are not what keeps the output correct — the autonomous validation loop does that in every mode.
 
 ## Related
 - `/review-gate` sets or shows the mode.
