@@ -52,6 +52,9 @@ Agent: Creating a horror game! Let me customize it.
    → Godot ✓
    → Unity
    → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Horror sub-genre?
    → Investigation (Phasmophobia) ✓

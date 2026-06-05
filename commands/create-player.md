@@ -30,7 +30,7 @@ The agent will:
    - Game dimension (2D, 3D)
    - Abilities (Jump, Sprint, Crouch, Dash, Wall-jump, Double-jump)
    - Camera style (Fixed, Follow, Orbit)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Load player-controllers** skill → matching controller type
 

@@ -32,7 +32,7 @@ Each component includes:
 
 The **component-builder** agent will:
 
-1. **Detect or ask for engine** (Godot, Unity, Unreal, Roblox, Web)
+1. **Detect or ask for engine** (Godot, Unity, Unreal, Roblox, Web, Defold)
 2. **Ask what component** you need
 3. **Ask customization questions** specific to that component
 4. **Generate complete code** following engine patterns

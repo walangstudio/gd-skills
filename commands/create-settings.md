@@ -21,7 +21,7 @@ Adds a complete settings system with:
    - Which categories (Audio, Video, Controls, Accessibility)
    - Input system type (Built-in, New Input System)
    - Platform (Desktop, Mobile, Console)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Generate settings manager** (autoload/singleton)
 

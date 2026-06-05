@@ -47,6 +47,11 @@ Agent: Creating a racing game! Let me customize it.
 
 1. Which engine?
    → Godot ✓
+   → Unity
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Racing type?
    → Kart (Mario Kart) ✓

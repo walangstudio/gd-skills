@@ -30,7 +30,7 @@ The agent will:
    - Health type (Simple HP, HP + Armor, HP + Shield regen)
    - Death behavior (Respawn, Game Over, Destroy)
    - HUD display (Health bar, Hearts, Numeric)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Load combat-systems** skill → Health System section
 

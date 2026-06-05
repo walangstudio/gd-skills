@@ -39,7 +39,7 @@ The **game-architect** agent will:
    - Progression system
 
 2. **Ask questions** via interactive prompts:
-   - Which engine? (Godot, Roblox, Unity, Unreal, Web)
+   - Which engine? (Godot, Unity, Unreal, Roblox, Web, Defold)
    - How many levels/stages?
    - Health system type? (lives, health bar, one-hit)
    - Enemy behaviors?
@@ -77,7 +77,10 @@ Questions:
 - Engine?
   → Godot (Recommended for 2D)
   → Unity
-  → Web (JavaScript/Phaser)
+  → Unreal
+  → Roblox
+  → Web (Phaser / HTML5)
+  → Defold
 
 - How many levels?
   → 3 levels
