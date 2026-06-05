@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top-Down Racer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 16px; }
+    canvas { background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    Lap <span id="lap">1 / 3</span> &nbsp;|&nbsp;
+    Next CP <span id="cp">0</span> &nbsp;|&nbsp;
+    <span id="time">0.0</span>s &nbsp;|&nbsp;
+    Up = gas, Down = brake/reverse, Left/Right = steer, R = restart
+  </div>
+  <canvas id="game" width="640" height="480"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
