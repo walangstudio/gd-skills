@@ -7,6 +7,10 @@ description: Racing game template with vehicle physics, track system, AI opponen
 
 Production-ready racing game template with vehicle physics, tracks, AI racers, and progression.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/racing/`: the pure mechanics live in `logic.js` (run `node test.js` — 14 passing assert groups) split from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating racing or driving games

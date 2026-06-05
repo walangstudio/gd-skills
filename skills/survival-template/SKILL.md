@@ -7,6 +7,10 @@ description: Survival game template with crafting, hunger/thirst, base building,
 
 Production-ready survival game template with multiple sub-genres.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/survival/`: the pure mechanics live in `logic.js` (run `node test.js` — 15 passing assert groups) split from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating survival/crafting games
