@@ -328,7 +328,7 @@ Based on answers, create the complete game:
    - Adjust difficulty curve
 ```
 
-### Step 5: Integration & Delivery
+### Step 5: Integration, Validation & Delivery
 Ensure all systems work together:
 - Menu → Gameplay works
 - Pause/unpause works
@@ -338,6 +338,8 @@ Ensure all systems work together:
 - Level progression works
 - Audio plays correctly
 - Game over/victory conditions work
+
+Then run the **autonomous validation loop** (`guides/autonomous-validation.md`) before delivering — every time: wire check (`integration-validator`), `/consistency-check` (if a registry exists), and a functional self-check of the core loop; fix what you find, loop until clean, and report a short **Verification** summary. Deliver a game that passed validation — escalate to the user only for genuine blockers, with one specific question.
 
 ## Quality Checklist
 

@@ -19,11 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP config examples for Unity, Unreal, Roblox, and Web engines
 - CHANGELOG.md and CONTRIBUTING.md
 - **Defold as a first-class 6th engine**: `defold-specialist` agent, `defold-style` rule, `defold-mode` context, `defold-patterns` skill, `/setup-defold`, MCP config, and a `.script`/`.gui_script`/`.render_script` advisory hook; Defold code in all 9 shared component skills and all 11 genre templates
-- **Opt-in depth layer** (never slows the `/create-*` path): version-pinned engine-reference docs (`docs/engine-reference/`), architecture pattern guides (`guides/`), entity registry + `/consistency-check`, session-state checkpoint + `/checkpoint` + SessionStart resume hook, opt-in review gates + `/review-gate` (`guides/review-gates.md`), `/build-team`, verification-driven dev + `/acceptance`, prompt cookbook, and doc templates (`docs/templates/`)
+- **Depth layer**: version-pinned engine-reference docs (`docs/engine-reference/`), architecture pattern guides (`guides/`), entity registry + `/consistency-check`, session-state checkpoint + `/checkpoint` + SessionStart resume hook, review gates + `/review-gate` (`guides/review-gates.md`), `/build-team`, verification-driven dev + `/acceptance`, prompt cookbook, and doc templates (`docs/templates/`)
 - Discipline agents: `narrative-designer`, `accessibility-specialist`, `security-engineer`
 - Depth directories (`docs`, `guides`, `design`) now installed for the Claude target
 - Self-repair loop: `/self-repair` + `guides/self-repair-loop.md` — with a connected engine MCP, run → screenshot → diff vs intent → auto-fix (Godot/Defold first)
 - `guides/rag-setup.md` — optional power-user path to index engine reference docs into a mememo vector store
+- **Autonomous validation by default**: every `/create-*` and builder now self-validates before handing back (wiring check, registry consistency, functional self-check of the core loop), fixes findings, loops until clean, and reports a Verification summary — instead of shipping unvalidated output for the user to debug. New `guides/autonomous-validation.md`. Review gates (`/review-gate`) are now design rigor ON TOP of this baseline; `solo` no longer means "no checks".
 - Runnable web samples: coin-collector, snake, breakout, platformer, tower-defense, match3 (under `samples/web/`) — dependency-free HTML5 canvas games, each with logic split from rendering and headless unit tests (`node test.js`); `scripts/test-samples.sh` runs them all in CI
 
 ### Fixed

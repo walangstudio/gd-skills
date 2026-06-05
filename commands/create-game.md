@@ -62,6 +62,7 @@ The **game-architect** agent will:
    - **integration-validator**: Cross-component wiring check
 
 5. **Integrate** all systems to create a cohesive, playable game
+6. **Validate automatically** before handing back — the builder runs the autonomous validation loop (`guides/autonomous-validation.md`): wiring check, registry consistency, and a functional self-check of the core loop. It fixes what it finds, loops until clean, and reports a short **Verification** summary. You review a working game, not a broken one.
 
 ## Example Usage
 

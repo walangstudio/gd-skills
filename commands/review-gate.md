@@ -1,16 +1,16 @@
 ---
-description: Show or set the review-gate mode (solo / lean / full) for this project. Controls whether builders pause for architect/validator sign-off between phases. Default is solo (no gates) so the fast /create-* path is never slowed.
+description: Show or set the review-gate mode (solo / lean / full) for this project. Controls extra DESIGN sign-off on top of the always-on autonomous validation. Default is solo (output still validated, no extra design gates).
 ---
 
 # Review Gate Command
 
 ## What This Command Does
 
-Sets the **review mode** that builders read before advancing between phases. Modes:
+Sets the **review mode** for *design* rigor. Output is **always** auto-validated and self-fixed regardless of mode (see `guides/autonomous-validation.md`); the mode only adds design/architecture sign-off:
 
-- **solo** (default) — no gates; maximum speed (jams, prototypes, one-shot generation)
-- **lean** — gates only at phase boundaries (design → impl, before "done", before release)
-- **full** — a gate at every step (each system reviewed before the next)
+- **solo** (default) — no extra design gates; output is still validated (jams, prototypes, one-shot generation)
+- **lean** — a design gate at phase boundaries (design → impl, before "done", before release)
+- **full** — a design gate at every step (each system reviewed before the next)
 
 See `guides/review-gates.md` for the full model and verdict handling.
 
@@ -20,7 +20,7 @@ See `guides/review-gates.md` for the full model and verdict handling.
 2. With an argument (`solo` | `lean` | `full`), update that line in `design/session/active.md` (creating the file from its template if needed).
 3. Confirm the new mode and what it means for the next builder run.
 
-This command only sets a flag. It never reviews code itself — the gates fire inside the builders when the mode is `lean` or `full`.
+This command only sets a flag for *design* rigor. It does not control validation — builders always run the autonomous validation loop. The extra design gates fire inside the builders when the mode is `lean` or `full`.
 
 ## Usage
 
@@ -28,7 +28,7 @@ This command only sets a flag. It never reviews code itself — the gates fire i
 /review-gate            # show current mode
 /review-gate lean       # gates at phase boundaries only
 /review-gate full       # gate every step
-/review-gate solo       # back to no gates (default)
+/review-gate solo       # no extra design gates (default; output still validated)
 ```
 
 ## When to Use
@@ -38,4 +38,4 @@ This command only sets a flag. It never reviews code itself — the gates fire i
 
 ---
 
-**Control the rigor.** `/review-gate lean` adds milestone sign-offs; `/review-gate solo` keeps the generator fast.
+**Control the design rigor.** Output is always validated; `/review-gate lean` adds milestone design sign-offs, `/review-gate solo` keeps just the baseline.

@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **39 commands** — plus an opt-in depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) that never slows the one-shot `/create-*` path.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **39 commands** — plus a depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) and **autonomous validation** baked into every `/create-*` so generated games are self-checked and self-fixed before you see them.
 
 ### Create a Full Game in Seconds
 
@@ -324,15 +324,16 @@ gd-skills/
 └── examples/         (configurations)
 ```
 
-## Depth Layer (opt-in, never slows `/create-*`)
+## Depth Layer
 
-Beyond fast generation, gd-skills ships reference material agents consult on demand. None of it adds prompts to the one-shot genre commands.
+Beyond fast generation, gd-skills self-validates its output and ships reference material agents consult on demand.
 
 - **Engine reference docs** (`docs/engine-reference/<engine>/`) — version-pinned API notes per engine with an explicit LLM knowledge cutoff, so agents don't invent post-cutoff APIs.
 - **Architecture guides** (`guides/`) — distilled pattern guides (message passing, ECS vs component, game loop/timestep, object pooling, event bus, data-driven design, state machines, behavior trees) with per-engine mappings.
 - **Entity registry + `/consistency-check`** (`design/registry/`) — a single source of truth for cross-system facts (enemy stats, item costs, formulas); the command flags code/docs that disagree.
 - **Session-state + `/checkpoint`** (`design/session/active.md`) — a portable checkpoint surfaced at session start; optionally backed by a mememo MCP for persistent agent memory.
-- **Opt-in review gates + `/review-gate`** (`guides/review-gates.md`) — solo (default, no gates) / lean / full. Builders only pause for architect/validator sign-off in lean or full, so the generator stays fast.
+- **Autonomous validation (always on)** (`guides/autonomous-validation.md`) — every `/create-*` and build self-validates before handing back: wiring check, registry consistency, and a functional self-check of the core loop, fixing what it finds and reporting a **Verification** summary. You review a working game, not a broken one.
+- **Review gates + `/review-gate`** (`guides/review-gates.md`) — tiered DESIGN rigor on top of that baseline: solo (default, output still validated) / lean (phase gate) / full (gate every system).
 - **Team orchestration + `/build-team`** — aligns architect, engine specialist, game-feel, and integration on one system in a single coordinated pass.
 - **Doc templates** (`docs/templates/`) — GDD, ADR, technical design, content plan, milestone plan, playtest report.
 - **Prompt cookbook** (`guides/prompt-cookbook.md`) — curated, copy-paste prompts per genre/system/engine that actually land.

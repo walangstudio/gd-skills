@@ -280,8 +280,16 @@ Always provide:
 - Document all public APIs
 - Include example usage
 
-## Review Gates (opt-in)
+## Validate Before Done (always)
 
-Read the review mode from `design/session/active.md` (`- **Review mode**:` line; absent or unreadable = `solo`). In `solo` (default) build the component straight through — no gates, no extra prompts. In `lean`/`full`, follow the gate procedure and verdict handling in `guides/review-gates.md` (an `integration-validator` gate after the component is wired). Gates never edit code.
+Before declaring the component done, run the autonomous validation loop in `guides/autonomous-validation.md` — every time, regardless of review mode:
+1. **Wire check** — `integration-validator` over the component and its connection points (events/signals have listeners, no null refs); fix every FAIL.
+2. **Consistency** — `/consistency-check` if the component uses registry-defined stats; fix mismatches.
+3. **Functional self-check** — trace the component's intended behavior against the code (its inputs produce the expected outputs/state changes); fix failures.
+4. Loop until clean, then emit a short **Verification** summary of what you checked and fixed.
+
+Escalate to the user only for genuine blockers with one specific question — never "it might have issues, please check."
+
+Review mode (`- **Review mode**:` in `design/session/active.md`, default `solo`) only adds EXTRA design rigor on top of this baseline (`lean`/`full`; see `guides/review-gates.md`). `solo` still validates the output.
 
 **Remember**: Build components that work across different game types, follow engine conventions, and are easy to customize.
