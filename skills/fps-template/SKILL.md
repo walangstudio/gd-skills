@@ -7,6 +7,10 @@ description: Complete first-person shooter template with player controller, weap
 
 Production-ready first-person shooter template with mouse look, weapons, enemy AI, and level progression.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/shooter/`: the pure mechanics live in `logic.js` (run `node test.js` — 13 passing assert groups) split from rendering/input in `game.js` — a top-down projectile-combat reference, the closest web-runnable analog to an FPS core loop. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating first-person shooter games

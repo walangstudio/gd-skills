@@ -7,6 +7,10 @@ description: Puzzle game template with grid mechanics, level progression, undo s
 
 Production-ready puzzle game template with grid logic, level management, and puzzle mechanics.
 
+## Verified Reference Implementation
+
+Complete, dependency-free, **headless-tested** references for this genre ship in the gd-skills repo: `samples/web/g2048/` (16 groups) and `samples/web/match3/` (8 groups). Each splits pure mechanics in `logic.js` (run `node test.js`) from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating puzzle or logic games

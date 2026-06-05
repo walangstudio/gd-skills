@@ -7,6 +7,10 @@ description: Complete 2D/3D platformer template with player controller, enemies,
 
 Production-ready platformer template with jumping, enemies, collectibles, and level progression.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/platformer/`: the pure mechanics live in `logic.js` (run `node test.js` — 10 passing assert groups) split from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating 2D or 3D platformer games

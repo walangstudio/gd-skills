@@ -7,6 +7,10 @@ description: Classic game templates for arcade, card, board, puzzle, and retro g
 
 Production-ready templates for classic and arcade game genres.
 
+## Verified Reference Implementation
+
+Complete, dependency-free, **headless-tested** references for this genre ship in the gd-skills repo: `samples/web/snake/` (7 groups), `samples/web/breakout/` (13 groups), and `samples/web/asteroids/` (13 groups). Each splits pure mechanics in `logic.js` (run `node test.js`) from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Recreating classic arcade games
