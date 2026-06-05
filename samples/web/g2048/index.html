@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2048</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 18px; }
+    #wrap { display: grid; gap: 10px; place-items: center; }
+    #board { display: grid; grid-template-columns: repeat(4, 76px);
+      grid-template-rows: repeat(4, 76px); gap: 8px; padding: 8px;
+      background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+    .cell { display: grid; place-items: center; border-radius: 6px;
+      font-weight: bold; font-size: 30px; user-select: none; }
+    #status { min-height: 22px; font-size: 16px; color: #7CFC9A; }
+  </style>
+</head>
+<body>
+  <div id="hud">Score: <span id="score">0</span> &nbsp;|&nbsp; Arrow keys to move, R to restart</div>
+  <div id="wrap">
+    <div id="board"></div>
+    <div id="status"></div>
+  </div>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
