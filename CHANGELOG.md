@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-repair loop: `/self-repair` + `guides/self-repair-loop.md` — with a connected engine MCP, run → screenshot → diff vs intent → auto-fix (Godot/Defold first)
 - `guides/rag-setup.md` — optional power-user path to index engine reference docs into a mememo vector store
 - **Autonomous validation by default**: every `/create-*` and builder now self-validates before handing back (wiring check, registry consistency, functional self-check of the core loop), fixes findings, loops until clean, and reports a Verification summary — instead of shipping unvalidated output for the user to debug. New `guides/autonomous-validation.md`. Review gates (`/review-gate`) are now design rigor ON TOP of this baseline; `solo` no longer means "no checks".
-- Runnable web samples: coin-collector, snake, breakout, platformer, tower-defense, match3, shooter, asteroids, g2048 (under `samples/web/`) — dependency-free HTML5 canvas games, each with logic split from rendering and headless unit tests (`node test.js`); `scripts/test-samples.sh` runs all 9 in CI
+- Runnable web samples: coin-collector, snake, breakout, platformer, tower-defense, match3, shooter, asteroids, g2048, rpg, racing, roguelike (under `samples/web/`) — dependency-free HTML5 canvas games, each with logic split from rendering and headless unit tests (`node test.js`); `scripts/test-samples.sh` runs them all in CI
 - Complete engine-reference module docs for all 6 engines (`docs/engine-reference/<engine>/modules/`) — core, scripting, physics, rendering, ui, audio, animation, navigation, each with verified APIs, runnable snippets, and gotchas
 
 ### Fixed
