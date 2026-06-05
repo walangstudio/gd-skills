@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Survival</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 14px; line-height: 1.5; }
+    #hud b { color: #fff; }
+    #keys { position: fixed; bottom: 12px; left: 12px; font-size: 12px; color: #9aa0ad; }
+    canvas { background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    Day <b id="day">1</b> (<span id="phase">Day</span>) &mdash; survive to day 3<br />
+    HP <b id="health">100</b> &nbsp; Hunger <b id="hunger">100</b> &nbsp; Energy <b id="energy">100</b><br />
+    Wood <b id="wood">0</b> &nbsp; Food <b id="food">0</b>
+  </div>
+  <div id="keys">Arrows: move &nbsp;|&nbsp; E: gather &nbsp;|&nbsp; F: eat &nbsp;|&nbsp; 1: campfire (5 wood) &nbsp;|&nbsp; 2: axe (3 wood + 1 food) &nbsp;|&nbsp; R: restart</div>
+  <canvas id="game" width="480" height="320"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

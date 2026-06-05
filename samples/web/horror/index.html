@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stealth Horror</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a0c12; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 16px; line-height: 1.5; }
+    canvas { background: #11141d; border-radius: 8px; box-shadow: 0 6px 24px #000a; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    Keys: <span id="collected">0</span> / 2 &nbsp;|&nbsp;
+    Battery: <span id="battery">100</span>% <br />
+    Arrow keys to move &nbsp;·&nbsp; F: flashlight &nbsp;·&nbsp; R: restart &nbsp;·&nbsp; avoid the red cone
+  </div>
+  <canvas id="game" width="480" height="320"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
