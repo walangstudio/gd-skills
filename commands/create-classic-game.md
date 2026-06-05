@@ -50,7 +50,10 @@ Agent: Creating a classic game! Let me customize it.
 1. Which engine?
    → Godot ✓
    → Unity
-   → JavaScript (HTML5)
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Game genre?
    → Arcade (Space Invaders, Breakout)

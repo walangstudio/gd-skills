@@ -48,6 +48,11 @@ Agent: Creating a farming game! Let me customize it.
 
 1. Which engine?
    → Godot ✓
+   → Unity
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Farming sub-genre?
    → Classic Farm (Stardew Valley) ✓
