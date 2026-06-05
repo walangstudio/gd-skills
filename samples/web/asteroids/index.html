@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asteroids</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0d12; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 18px; }
+    canvas { background: #0e1118; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    Score: <span id="score">0</span> &nbsp;|&nbsp; Lives: <span id="lives">3</span>
+    &nbsp;|&nbsp; &larr;/&rarr; rotate, &uarr; thrust, Space fire, R restart
+  </div>
+  <canvas id="game" width="640" height="480"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
