@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete engine-reference module docs for all 6 engines (`docs/engine-reference/<engine>/modules/`) — core, scripting, physics, rendering, ui, audio, animation, navigation, each with verified APIs, runnable snippets, and gotchas
 
 ### Fixed
+- `roblox-toolchain` skill was missing YAML frontmatter (could fail to load); added `name`/`description`
+- Stale engine lists in `genre-template-master` and `performance-debugger` agents (and the interactive engine menu) now list all 6 engines incl. Defold; corrected component counts in CONTRIBUTING.md
 - Command injection vulnerability in hooks.json — moved inline `node -e` to standalone .js scripts
 - Flying enemy movement bug in platformer template (conflicting velocity + position writes)
 - Copilot uninstaller now properly cleans gd-skills content from `copilot-instructions.md`
