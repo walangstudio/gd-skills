@@ -6,11 +6,11 @@ Thank you for your interest in contributing to gd-skills! This guide explains ho
 
 ```
 gd-skills/
-├── agents/     15 specialized AI agent definitions (.md)
-├── skills/     26 skill templates with code examples (*/SKILL.md)
-├── commands/   30 slash command definitions (.md)
-├── rules/      6 coding standard files (.md)
-├── contexts/   5 engine mode files (.md)
+├── agents/     20 specialized AI agent definitions (.md)
+├── skills/     28 skill templates with code examples (*/SKILL.md)
+├── commands/   39 slash command definitions (.md)
+├── rules/      7 coding standard files (.md)
+├── contexts/   6 engine mode files (.md)
 ├── hooks/      Automation hooks (.json + .js scripts)
 ├── scripts/    Validation and utility scripts
 └── mcp-configs/  MCP server configuration examples
