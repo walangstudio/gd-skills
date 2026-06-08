@@ -7,6 +7,10 @@ description: Racing game template with vehicle physics, track system, AI opponen
 
 Production-ready racing game template with vehicle physics, tracks, AI racers, and progression.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/racing/`: the pure mechanics live in `logic.js` (run `node test.js` — 14 passing assert groups) split from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating racing or driving games
@@ -176,6 +180,101 @@ public class RacingVehicle : MonoBehaviour
 }
 ```
 
+### Defold (Vehicle Controller)
+```lua
+-- vehicle.script — arcade model: a heading yaw + forward speed, steer turns, friction decays
+go.property("max_speed", 30.0)
+go.property("acceleration", 15.0)
+go.property("brake_force", 25.0)
+go.property("turn_speed", 3.0)
+go.property("grip", 0.7)
+go.property("drift_grip", 0.9)
+go.property("max_boost", 100.0)
+go.property("boost_multiplier", 1.5)
+
+local MSG_BOOST_CHANGED = hash("boost_changed")
+
+local function move_toward(value, target, max_delta)
+	if math.abs(target - value) <= max_delta then return target end
+	return value + (target > value and max_delta or -max_delta)
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.speed = 0.0
+	self.heading = 0.0            -- yaw in radians
+	self.throttle = 0.0
+	self.steer = 0.0
+	self.drifting = false
+	self.drift_timer = 0.0
+	self.boost = 0.0
+	self.boosting = false
+	self.boost_left = 0.0
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	local target = self.max_speed * (self.boosting and self.boost_multiplier or 1.0)
+	if self.throttle > 0 then
+		self.speed = move_toward(self.speed, target, self.acceleration * dt)
+	elseif self.throttle < 0 then
+		self.speed = move_toward(self.speed, -self.max_speed * 0.3, self.brake_force * dt)
+	else
+		self.speed = move_toward(self.speed, 0, self.acceleration * 0.5 * dt)
+	end
+
+	local turn = self.steer * self.turn_speed * dt
+	if self.drifting then
+		turn = turn * 1.4
+		self.drift_timer = self.drift_timer + dt
+		if self.drift_timer > 0.5 then
+			self.boost = math.min(self.boost + 30.0 * dt, self.max_boost)
+			msg.post("#hud", MSG_BOOST_CHANGED, { current = self.boost, max = self.max_boost })
+		end
+	else
+		if self.drift_timer > 1.0 and self.boost > 0 then
+			self.boosting = true
+			self.boost_left = self.boost / 50.0
+			self.boost = 0.0
+			msg.post("#hud", MSG_BOOST_CHANGED, { current = 0, max = self.max_boost })
+		end
+		self.drift_timer = 0.0
+	end
+
+	if self.speed ~= 0 then
+		self.heading = self.heading + turn * (self.speed >= 0 and 1 or -1)
+	end
+
+	if self.boosting then
+		self.boost_left = self.boost_left - dt
+		if self.boost_left <= 0 then self.boosting = false end
+	end
+
+	-- heading drives a forward vector; grip blends the previous direction (drift slip)
+	local forward = vmath.vector3(math.sin(self.heading), 0, math.cos(self.heading))
+	local pos = go.get_position() + forward * self.speed * dt
+	go.set_position(pos)
+	go.set_rotation(vmath.quat_rotation_y(self.heading))
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("accelerate") then
+		self.throttle = action.value
+	elseif action_id == hash("brake") then
+		self.throttle = -action.value
+	elseif action_id == hash("steer_right") then
+		self.steer = action.value
+	elseif action_id == hash("steer_left") then
+		self.steer = -action.value
+	elseif action_id == hash("drift") then
+		self.drifting = action.value > 0 and math.abs(self.steer) > 0.3
+	end
+end
+```
+
 ### Track/Lap System
 ```gdscript
 class_name TrackSystem
@@ -249,6 +348,65 @@ func start_race() -> void:
     race_started.emit()
 ```
 
+### Defold (Track/Lap System)
+```lua
+-- track.script — checkpoints must be hit in order; finish line increments laps
+-- each checkpoint is a trigger collision object that posts its index here
+go.property("total_laps", 3)
+go.property("checkpoint_count", 8)
+
+local MSG_LAP_COMPLETED = hash("lap_completed")
+local MSG_RACE_FINISHED = hash("race_finished")
+
+local function ensure(self, id)
+	if not self.racers[id] then
+		self.racers[id] = { lap = 0, checkpoint = 0, total_time = 0.0, lap_time = 0.0, finished = false }
+	end
+	return self.racers[id]
+end
+
+function init(self)
+	self.racers = {}
+	self.finish_order = {}
+	self.running = false
+end
+
+function update(self, dt)
+	if not self.running then return end
+	for _, r in pairs(self.racers) do
+		if not r.finished then
+			r.total_time = r.total_time + dt
+			r.lap_time = r.lap_time + dt
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_race") then
+		self.running = true
+	elseif message_id == hash("register_racer") then
+		ensure(self, message.racer_id)
+	elseif message_id == hash("checkpoint_hit") then
+		local r = ensure(self, message.racer_id)
+		if r.finished or message.index ~= r.checkpoint then return end   -- enforce order
+		r.checkpoint = r.checkpoint + 1
+		if r.checkpoint >= self.checkpoint_count then
+			r.checkpoint = 0
+			r.lap = r.lap + 1
+			msg.post("#hud", MSG_LAP_COMPLETED, { racer = message.racer_id, lap = r.lap, time = r.lap_time })
+			r.lap_time = 0.0
+			if r.lap >= self.total_laps then
+				r.finished = true
+				table.insert(self.finish_order, message.racer_id)
+				msg.post("#hud", MSG_RACE_FINISHED, {
+					racer = message.racer_id, total = r.total_time, position = #self.finish_order,
+				})
+			end
+		end
+	end
+end
+```
+
 ### AI Racer
 ```gdscript
 class_name AIRacer
@@ -302,6 +460,69 @@ func set_rubber_band(player_position: int, my_position: int) -> void:
         rubber_band_speed = 1.15
     else:
         rubber_band_speed = 1.0
+```
+
+### Defold (AI Racer)
+```lua
+-- ai_racer.script — steers toward the next waypoint, rubber-bands to stay competitive
+go.property("max_speed", 30.0)
+go.property("acceleration", 15.0)
+go.property("turn_speed", 3.0)
+go.property("skill_level", 0.8)        -- 0..1
+
+local function move_toward(value, target, max_delta)
+	if math.abs(target - value) <= max_delta then return target end
+	return value + (target > value and max_delta or -max_delta)
+end
+
+function init(self)
+	-- waypoints: a plain list of vmath.vector3, set via "set_waypoints"
+	self.waypoints = {}
+	self.target_index = 1
+	self.speed = 0.0
+	self.heading = 0.0
+	self.rubber_band = 1.0
+end
+
+function update(self, dt)
+	local node = self.waypoints[self.target_index]
+	if not node then return end
+
+	local here = go.get_position()
+	if vmath.length(node - here) < 2.0 then
+		self.target_index = self.target_index % #self.waypoints + 1
+		node = self.waypoints[self.target_index]
+	end
+
+	-- steer: signed angle between current heading and the direction to the waypoint
+	local to_target = vmath.normalize(node - here)
+	local forward = vmath.vector3(math.sin(self.heading), 0, math.cos(self.heading))
+	local cross = forward.z * to_target.x - forward.x * to_target.z
+	local steer = math.max(-1.0, math.min(1.0, cross * 2.0))
+
+	self.speed = move_toward(self.speed, self.max_speed * self.skill_level * self.rubber_band, self.acceleration * dt)
+	if self.speed ~= 0 then
+		self.heading = self.heading + steer * self.turn_speed * dt
+	end
+
+	go.set_position(here + forward * self.speed * dt)
+	go.set_rotation(vmath.quat_rotation_y(self.heading))
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_waypoints") then
+		self.waypoints = message.points
+	elseif message_id == hash("set_rubber_band") then
+		-- slow if ahead of the player, speed up if behind
+		if message.my_position < message.player_position then
+			self.rubber_band = 0.85
+		elseif message.my_position > message.player_position then
+			self.rubber_band = 1.15
+		else
+			self.rubber_band = 1.0
+		end
+	end
+end
 ```
 
 ---

@@ -47,6 +47,11 @@ Agent: Creating a puzzle game! Let me customize it.
 
 1. Which engine?
    → Godot ✓
+   → Unity
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Puzzle type?
    → Sokoban/Push block ✓

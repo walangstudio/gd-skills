@@ -85,6 +85,45 @@ extends Resource
 @export var condition: Dictionary = {}  # Optional visibility condition
 ```
 
+### Defold
+
+A dialogue tree is just a Lua table returned from a `require`'d module. No editor resource needed; nodes are keyed by id, choices and conditions are nested tables, and `next = -1` ends the conversation.
+
+```lua
+-- dialogue/blacksmith.lua
+return {
+	id = "blacksmith_greeting",
+	speaker = "Blacksmith",
+	portrait = "/portraits#blacksmith",   -- url to a sprite/gui texture
+	nodes = {
+		[0] = {
+			text = "Welcome, traveler! Need a weapon forged?",
+			choices = {
+				{ text = "Show me what you have.", next = 1 },
+				{ text = "I need repairs.", next = 2 },
+				{ text = "Just passing through.", next = -1 },
+			},
+		},
+		[1] = {
+			text = "Here's my finest work. Take a look!",
+			action = "open_shop",
+			next = -1,
+		},
+		[2] = {
+			text = "Hand it over. I'll have it ready by tomorrow.",
+			condition = { has_item = "broken_sword" },
+			fail_text = "You don't seem to have anything that needs fixing.",
+			action = "start_repair_quest",
+			next = -1,
+		},
+	},
+}
+```
+
+```lua
+-- in any script: local tree = require("dialogue.blacksmith")
+```
+
 ---
 
 ## Dialogue Manager
@@ -260,6 +299,92 @@ public class DialogueManager : MonoBehaviour
 }
 ```
 
+### Defold
+
+The manager is a script component (e.g. `/dialogue#manager`). It walks the tree table, checks conditions against shared game state, and tells the UI what to show by posting messages — never by reaching into the GUI. The UI posts back `select_choice` / `continue` to advance.
+
+```lua
+-- objects/dialogue_manager.script   (/dialogue#manager)
+local game_state = require("scripts.game_state")
+
+local function check_condition(cond)
+	if cond.has_item then return game_state.inventory_has(cond.has_item) end
+	if cond.quest_complete then return game_state.quest_complete(cond.quest_complete) end
+	if cond.flag then return game_state.flags[cond.flag] == true end
+	return true
+end
+
+local function valid_choices(node)
+	local valid = {}
+	for _, choice in ipairs(node.choices or {}) do
+		if not choice.condition or check_condition(choice.condition) then
+			table.insert(valid, choice)
+		end
+	end
+	return valid
+end
+
+local function show_node(self, index)
+	if not self.tree or index < 0 or self.tree.nodes[index] == nil then
+		msg.post("/dialogue#ui", "dialogue_ended")
+		self.active = false
+		self.tree = nil
+		return
+	end
+	self.index = index
+	local node = self.tree.nodes[index]
+
+	if node.condition and not check_condition(node.condition) then
+		if node.fail_text then
+			msg.post("/dialogue#ui", "show_text",
+				{ text = node.fail_text, speaker = self.tree.speaker })
+		else
+			show_node(self, node.next or -1)
+		end
+		return
+	end
+
+	msg.post("/dialogue#ui", "show_text",
+		{ text = node.text, speaker = self.tree.speaker, portrait = self.tree.portrait })
+
+	if node.action then
+		msg.post("/game#controller", "dialogue_action", { action = node.action })
+	end
+
+	self.choices = valid_choices(node)
+	if #self.choices > 0 then
+		local labels = {}
+		for i, c in ipairs(self.choices) do labels[i] = c.text end
+		msg.post("/dialogue#ui", "show_choices", { choices = labels })
+	end
+end
+
+function init(self)
+	self.active = false
+	self.index = 0
+	self.choices = {}
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_dialogue") then
+		self.tree = require(message.module)   -- e.g. "dialogue.blacksmith"
+		self.active = true
+		msg.post("/dialogue#ui", "dialogue_started", { speaker = self.tree.speaker })
+		show_node(self, 0)
+
+	elseif message_id == hash("select_choice") then
+		local choice = self.choices[message.index]
+		if choice then show_node(self, choice.next) end
+
+	elseif message_id == hash("continue") then
+		local node = self.tree and self.tree.nodes[self.index]
+		if node and #(node.choices or {}) == 0 then
+			show_node(self, node.next or -1)
+		end
+	end
+end
+```
+
 ---
 
 ## Dialogue UI
@@ -352,6 +477,106 @@ func _on_choices_shown(choices: Array) -> void:
 
 func _on_dialogue_ended() -> void:
 	panel.visible = false
+```
+
+### Defold
+
+The UI is a `.gui_script`. The typewriter effect reveals characters over time in `update`: track a `char_timer`, compute how many characters should be visible, and feed that count to `gui.set_text` (slicing the full string). A tap reveals the rest instantly, or advances if already done. Choices are clickable GUI nodes hit-tested in `on_input`.
+
+```lua
+-- gui/dialogue.gui_script
+-- nodes: "panel", "portrait", "name_label", "text_label",
+--        "continue_indicator", and "choice_1".."choice_4"
+
+go.property("chars_per_second", 30.0)
+
+local MAX_CHOICES = 4
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	gui.set_enabled(gui.get_node("panel"), false)
+	self.full_text = ""
+	self.shown = 0
+	self.timer = 0
+	self.typing = false
+	self.choice_count = 0
+end
+
+function update(self, dt)
+	if not self.typing then return end
+	self.timer = self.timer + dt
+	local want = math.floor(self.timer * self.chars_per_second)
+	if want > self.shown then
+		self.shown = math.min(want, #self.full_text)
+		gui.set_text(gui.get_node("text_label"), self.full_text:sub(1, self.shown))
+		if self.shown >= #self.full_text then
+			self.typing = false
+			gui.set_enabled(gui.get_node("continue_indicator"), true)
+		end
+	end
+end
+
+local function hide_choices(self)
+	for i = 1, MAX_CHOICES do
+		gui.set_enabled(gui.get_node("choice_" .. i), false)
+	end
+	self.choice_count = 0
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("dialogue_started") then
+		gui.set_enabled(gui.get_node("panel"), true)
+
+	elseif message_id == hash("show_text") then
+		gui.set_text(gui.get_node("name_label"), message.speaker)
+		self.full_text = message.text
+		self.shown = 0
+		self.timer = 0
+		self.typing = true
+		gui.set_text(gui.get_node("text_label"), "")
+		gui.set_enabled(gui.get_node("continue_indicator"), false)
+		gui.set_enabled(gui.get_node("portrait"), message.portrait ~= nil)
+		hide_choices(self)
+
+	elseif message_id == hash("show_choices") then
+		self.choice_count = #message.choices
+		for i = 1, MAX_CHOICES do
+			local node = gui.get_node("choice_" .. i)
+			local c = message.choices[i]
+			gui.set_enabled(node, c ~= nil)
+			if c then gui.set_text(node, c) end
+		end
+		gui.set_enabled(gui.get_node("continue_indicator"), false)
+
+	elseif message_id == hash("dialogue_ended") then
+		gui.set_enabled(gui.get_node("panel"), false)
+		hide_choices(self)
+	end
+end
+
+function on_input(self, action_id, action)
+	if not gui.is_enabled(gui.get_node("panel")) then return end
+	if action_id ~= hash("touch") or not action.pressed then return end
+
+	-- a visible choice was tapped?
+	for i = 1, self.choice_count do
+		if gui.pick_node(gui.get_node("choice_" .. i), action.x, action.y) then
+			msg.post("/dialogue#manager", "select_choice", { index = i })
+			return true
+		end
+	end
+
+	if self.typing then
+		-- skip the typewriter to the end
+		self.typing = false
+		self.shown = #self.full_text
+		gui.set_text(gui.get_node("text_label"), self.full_text)
+		gui.set_enabled(gui.get_node("continue_indicator"), true)
+	elseif self.choice_count == 0 then
+		msg.post("/dialogue#manager", "continue")
+	end
+	return true
+end
 ```
 
 ---

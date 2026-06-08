@@ -30,7 +30,7 @@ Creates a complete, playable platformer game with:
 The **genre-template-master** agent will:
 
 1. **Ask customization questions** via AskUserQuestion:
-   - Target engine (Godot, Unity, Unreal, Web)
+   - Target engine (Godot, Unity, Unreal, Roblox, Web, Defold)
    - 2D or 3D?
    - Player abilities (jump, double jump, wall jump, dash)
    - Enemy types (patrol, flying, turret, boss)
@@ -62,11 +62,13 @@ Agent: Creating a complete 2D platformer! Let me customize it for you.
    → Godot (Recommended for 2D) ✓
    → Unity
    → Unreal
-   → Web (Phaser)
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Perspective?
    → 2D side-scrolling ✓
-   → 2.5D (3D graphics, 2D gameplay)
+   → 2.5D cinematic (3D world, 2D gameplay — REPLACED style)
    → 3D platformer
 
 3. Player abilities? (Select multiple)

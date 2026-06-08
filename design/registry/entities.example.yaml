@@ -1,0 +1,70 @@
+# gd-skills Entity Registry (example)
+#
+# Single source of truth for cross-system facts: enemy/NPC stats, item values,
+# and shared formulas. Multiple systems (combat, loot, economy, UI) reference
+# these numbers — the registry keeps them from drifting apart.
+#
+# Copy this file to `design/registry/entities.yaml` and edit it for your game.
+# Run `/consistency-check` to flag code or design docs that disagree with it.
+#
+# Schema:
+#   version:    integer schema version (currently 1)
+#   entities[]: actors (enemies, NPCs, the player) with stats
+#   items[]:    pickups, currency, equipment with values
+#   formulas[]: named formulas shared across systems
+#
+# Every entry's `source_files` lists the files expected to implement that fact,
+# so the consistency check knows where to look.
+
+version: 1
+
+entities:
+  - id: goblin
+    type: enemy
+    stats:
+      health: 30
+      damage: 5
+      speed: 120        # px/sec (2D) or units/sec (3D)
+      armor: 2          # percent damage reduction, used by damage_after_armor
+    drops:
+      - { item: gold, min: 1, max: 5 }
+      - { item: health_potion, chance: 0.1 }
+    source_files:
+      - "scripts/enemies/goblin.gd"
+      - "objects/goblin.script"
+
+  - id: player
+    type: player
+    stats:
+      health: 100
+      damage: 10
+      speed: 200
+      armor: 0
+    source_files:
+      - "scripts/player/player.gd"
+      - "objects/player.script"
+
+items:
+  - id: gold
+    type: currency
+    value: 1
+
+  - id: health_potion
+    type: consumable
+    value: 25           # heal amount
+    stack_max: 99
+
+formulas:
+  - id: damage_after_armor
+    expr: "damage * (1 - armor / 100)"
+    used_by:
+      - combat-systems
+    source_files:
+      - "scripts/combat/damage.gd"
+
+  - id: xp_to_level
+    expr: "floor(100 * level ^ 1.5)"
+    used_by:
+      - rpg-template
+    source_files:
+      - "scripts/progression/leveling.gd"

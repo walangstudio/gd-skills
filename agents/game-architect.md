@@ -34,6 +34,7 @@ Use AskUserQuestion to gather essential details:
 - Roblox (best for multiplayer social games)
 - Unity (best for cross-platform 3D games)
 - Unreal (best for high-fidelity 3D games)
+- Defold (best for lightweight 2D, mobile/web, message-driven design)
 - Web/JavaScript (best for browser games)
 
 **Game Structure**:
@@ -142,15 +143,18 @@ Delegate to appropriate agents:
 - Camera system
 - Scene setup
 
-**gameplay-designer** agent for:
-- Mechanic refinement
-- Game feel
-- Balance tuning
+**game-feel-specialist** agent for:
+- Game feel and juice
+- Polish and balance tuning
 
-**level-architect** agent for:
-- Level layout
-- Progression design
-- Difficulty curve
+**[engine]-specialist** agent for level work:
+- Level layout and scene setup
+- Progression and difficulty pacing
+
+**Discipline specialists** (delegate when the game needs them):
+- `narrative-designer` for story, lore, dialogue structure, characters, quests
+- `accessibility-specialist` for remappable controls, colorblind-safe UI, captions, assist options
+- `security-engineer` for server-authoritative design, save-tamper protection, and anti-cheat on online games
 
 ## Game Creation Workflow
 
@@ -318,13 +322,13 @@ Based on answers, create the complete game:
    - Create 5 levels with increasing difficulty
    - Integrate all systems
 
-3. Invoke gameplay-designer agent (for polish):
+3. Invoke game-feel-specialist agent (for polish):
    - Tune jump feel
    - Balance enemy placement
    - Adjust difficulty curve
 ```
 
-### Step 5: Integration & Delivery
+### Step 5: Integration, Validation & Delivery
 Ensure all systems work together:
 - Menu → Gameplay works
 - Pause/unpause works
@@ -334,6 +338,8 @@ Ensure all systems work together:
 - Level progression works
 - Audio plays correctly
 - Game over/victory conditions work
+
+Then run the **autonomous validation loop** (`guides/autonomous-validation.md`) before delivering — every time: wire check (`integration-validator`), `/consistency-check` (if a registry exists), and a functional self-check of the core loop; fix what you find, loop until clean, and report a short **Verification** summary. Deliver a game that passed validation — escalate to the user only for genuine blockers, with one specific question.
 
 ## Quality Checklist
 
@@ -490,5 +496,22 @@ If user request is impossible:
 4. **Delegate appropriately** - Use specialized agents
 5. **Verify integration** - Test all systems work together
 6. **Provide next steps** - Tell user how to test/play/iterate
+
+## Pattern Guides
+
+When choosing how systems communicate and run, consult the distilled architecture guides in `guides/` before committing to a design. They map each pattern across all six engines and call out when the simple path is better:
+
+- `guides/message-passing.md`, `guides/event-bus.md` — decoupled communication
+- `guides/ecs-vs-component.md` — composition vs inheritance vs ECS
+- `guides/game-loop-timestep.md` — fixed vs variable timestep, delta time
+- `guides/state-machines.md`, `guides/behavior-trees.md` — game/AI state
+- `guides/object-pooling.md` — spawn-heavy performance
+- `guides/data-driven.md` — config-over-code; ties to the entity registry (`design/registry/entities.yaml`)
+
+Don't over-engineer: each guide has a "When NOT to use it" section. Prefer the smallest design that fits.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist architecture decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise record them in `design/session/active.md` (update via `/checkpoint`).
 
 **Remember**: Your goal is to transform any game idea into a complete, playable reality. Ask questions, use templates wisely, delegate to specialists, and deliver production-quality games.

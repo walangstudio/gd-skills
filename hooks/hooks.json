@@ -44,6 +44,14 @@
         "description": "Check Luau formatting with StyLua (requires rokit toolchain)"
       },
       {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.(script|gui_script|render_script)$\"",
+        "hooks": [{
+          "type": "command",
+          "command": "node hooks/check-defold-types.js \"${tool_input.file_path}\""
+        }],
+        "description": "Check Defold .script/.gui_script/.render_script idioms (plain Lua, hashed message ids, lifecycle callbacks)"
+      },
+      {
         "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.cs$\"",
         "hooks": [{
           "type": "command",
@@ -75,6 +83,13 @@
         "command": "node -e \"console.log('[gd-skills] Game development plugin loaded. Use /create-game, /create-platformer, /create-fps, /create-horror, etc.');\""
       }],
       "description": "Welcome message on session start"
+    }, {
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node hooks/show-session-state.js"
+      }],
+      "description": "Surface the active session checkpoint (design/session/active.md) if present"
     }],
     "SessionEnd": [{
       "matcher": "*",

@@ -51,3 +51,4 @@ Content/
 - `unreal-patterns` for engine-specific patterns
 - `unreal-style` rule for coding standards
 - `unreal-specialist` agent for complex issues
+- `docs/engine-reference/unreal/` for version-pinned API reference

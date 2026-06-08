@@ -39,7 +39,7 @@ The **game-architect** agent will:
    - Progression system
 
 2. **Ask questions** via interactive prompts:
-   - Which engine? (Godot, Roblox, Unity, Unreal, Web)
+   - Which engine? (Godot, Unity, Unreal, Roblox, Web, Defold)
    - How many levels/stages?
    - Health system type? (lives, health bar, one-hit)
    - Enemy behaviors?
@@ -57,11 +57,12 @@ The **game-architect** agent will:
 
 4. **Delegate** to specialists:
    - **full-game-builder**: Menus, settings, saves, audio
-   - **[engine]-specialist**: Gameplay implementation
-   - **gameplay-designer**: Mechanic refinement
-   - **level-architect**: Level design
+   - **[engine]-specialist**: Gameplay implementation, level layout
+   - **game-feel-specialist**: Polish, juice, balance tuning
+   - **integration-validator**: Cross-component wiring check
 
 5. **Integrate** all systems to create a cohesive, playable game
+6. **Validate automatically** before handing back — the builder runs the autonomous validation loop (`guides/autonomous-validation.md`): wiring check, registry consistency, and a functional self-check of the core loop. It fixes what it finds, loops until clean, and reports a short **Verification** summary. You review a working game, not a broken one.
 
 ## Example Usage
 
@@ -76,7 +77,10 @@ Questions:
 - Engine?
   → Godot (Recommended for 2D)
   → Unity
-  → Web (JavaScript/Phaser)
+  → Unreal
+  → Roblox
+  → Web (Phaser / HTML5)
+  → Defold
 
 - How many levels?
   → 3 levels

@@ -7,6 +7,10 @@ description: Complete 2D/3D platformer template with player controller, enemies,
 
 Production-ready platformer template with jumping, enemies, collectibles, and level progression.
 
+## Verified Reference Implementation
+
+A complete, dependency-free, **headless-tested** reference for this genre ships in the gd-skills repo at `samples/web/platformer/`: the pure mechanics live in `logic.js` (run `node test.js` — 10 passing assert groups) split from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Creating 2D or 3D platformer games
@@ -351,6 +355,74 @@ void APlatformerCharacter::Landed(const FHitResult& Hit)
 }
 ```
 
+### Defold — Player Controller (2D Side-Scroller)
+```lua
+-- player.script — on a .go with a kinematic collision object "#collisionobject"
+go.property("move_speed", 600)
+go.property("jump_force", 800)
+go.property("double_jump_force", 700)
+go.property("gravity", -2400)
+go.property("can_double_jump", true)
+
+local MSG_CONTACT = hash("contact_point_response")
+
+function init(self)
+	self.velocity = vmath.vector3()
+	self.move = 0
+	self.on_ground = false
+	self.has_double_jump = true
+	self.correction = vmath.vector3()
+	msg.post(".", "acquire_input_focus")
+end
+
+function update(self, dt)
+	-- horizontal
+	self.velocity.x = self.move * self.move_speed
+	-- gravity
+	self.velocity.y = self.velocity.y + self.gravity * dt
+
+	self.correction = vmath.vector3()
+	self.on_ground = false
+	go.set_position(go.get_position() + self.velocity * dt)
+	self.move = 0
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_CONTACT then
+		-- resolve overlap so we don't sink into geometry
+		local proj = vmath.dot(self.correction, message.normal)
+		local comp = (message.distance - proj) * message.normal
+		self.correction = self.correction + comp
+		go.set_position(go.get_position() + comp)
+		-- landed if the contact normal points up
+		if message.normal.y > 0.7 then
+			self.on_ground = true
+			self.has_double_jump = true
+			if self.velocity.y < 0 then self.velocity.y = 0 end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("move_left") then
+		self.move = -action.value
+	elseif action_id == hash("move_right") then
+		self.move = action.value
+	elseif action_id == hash("jump") and action.pressed then
+		if self.on_ground then
+			self.velocity.y = self.jump_force
+		elseif self.can_double_jump and self.has_double_jump then
+			self.has_double_jump = false
+			self.velocity.y = self.double_jump_force
+		end
+	end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+```
+
 ### Coyote Time & Jump Buffer
 ```gdscript
 # Coyote time: Grace period after leaving platform
@@ -577,9 +649,55 @@ func _on_lives_changed(new_lives: int) -> void:
     lives_label.text = "Lives: %d" % new_lives
 ```
 
+## 2.5D Cinematic Platformer (REPLACED style)
+
+"2.5D platformer" (REPLACED, Ori, The Last Night) = **2D gameplay on a fixed plane inside a
+real 3D world** — pixel-art / 2D character sprites with 3D-rendered environments, parallax from
+genuine depth, and a cinematic post stack (volumetric light/god-rays, bloom, depth-of-field,
+chromatic aberration, film grain, color grading). The defining trait is the **controller stays
+2D** (X = run, Y = jump) while the scene is 3D; Z is locked to the gameplay plane and used only
+for visual depth. The run/jump/coyote-time/jump-buffer logic above is unchanged — only the
+render setup and the plane-lock are new.
+
+### Godot 4
+```gdscript
+# Player = CharacterBody3D locked to the XY plane; the visible character is a Sprite3D
+# (billboarded, texture_filter = Nearest) so a pixel-art sprite lives in a 3D scene.
+# Reuse the 2D controller's math, just on 3D axes, and pin Z every frame:
+#   velocity.x = input_dir * SPEED
+#   velocity.y -= GRAVITY * delta            # then move_and_slide()
+#   global_position.z = 0.0                  # never drift off the gameplay plane
+func _setup_cinematic(cam: Camera3D, world_env: WorldEnvironment) -> void:
+    cam.projection = Camera3D.PROJECTION_ORTHOGONAL   # slight perspective also works
+    var e := world_env.environment
+    e.glow_enabled = true                             # bloom / neon
+    e.volumetric_fog_enabled = true                   # god-rays / atmosphere (the REPLACED look)
+    e.adjustment_enabled = true                       # color grading (cyberpunk palette)
+    var attrs := CameraAttributesPractical.new()
+    attrs.dof_blur_far_enabled = true                 # depth of field
+    cam.attributes = attrs
+# Parallax = real depth: put background/foreground meshes at different Z — the camera gives
+# genuine parallax, no ParallaxBackground hack. Chromatic aberration + grain = a full-screen
+# shader (a ColorRect with a screen-space shader over the viewport).
+```
+
+### Other engines
+- **Unity (URP/HDRP):** player on a fixed Z in a 3D scene, SpriteRenderer billboarded (`Filter Mode = Point`); a **Volume** with **Bloom + Depth of Field + Chromatic Aberration + Film Grain + Color Adjustments**, plus **volumetric lighting / light shafts** (HDRP volumetrics or URP fog); side-scroller camera; parallax via real depth.
+- **Unreal:** Paper2D / PaperZD sprite on a constrained plane in a 3D level; a **Post Process Volume** with Bloom, DOF, Chromatic Aberration, Grain, plus Unreal's native **volumetric fog + light shafts** — the strongest fit for REPLACED's cinematic lighting.
+- **Web (Three.js):** orthographic/slight-perspective camera; player as a `NearestFilter` billboarded sprite at a fixed Z; meshes at varying Z for parallax; `EffectComposer` with **UnrealBloomPass + BokehPass (DOF)** + custom **chromatic-aberration / film-grain** passes + a radial-blur **god-ray** pass. Reuse the verified `samples/web/platformer` logic.
+- **Roblox:** lock the camera to a side view, character on a plane; `Lighting` FX **BloomEffect + DepthOfFieldEffect + ColorCorrectionEffect + Atmosphere + SunRaysEffect**.
+- **Defold:** 2D-first — do faux-2.5D with parallax sprite layers + scaled sprites + 2D lights; true volumetric/DOF is out of reach, so pick Godot/Unity/Unreal for the full REPLACED look.
+
+Consult `docs/engine-reference/<engine>/modules/rendering.md` for the target engine's post-processing API before emitting code.
+
 ## Customization Options
 
 When using `/create-platformer`, users can choose:
+
+**Perspective**:
+- 2D side-scrolling (classic)
+- 2.5D cinematic (3D world, 2D gameplay — REPLACED style; see section above)
+- 3D platformer
 
 **Player Abilities**:
 - Jump only (basic)

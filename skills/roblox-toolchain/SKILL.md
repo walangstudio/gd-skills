@@ -1,3 +1,8 @@
+---
+name: roblox-toolchain
+description: Modern external Roblox development workflow — VS Code with Rokit-managed tools (Rojo, Wally, Selene, StyLua, Darklua, Lune).
+---
+
 # Roblox Toolchain
 
 Modern external development workflow for Roblox using VS Code + Rokit-managed tools.

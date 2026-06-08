@@ -6,13 +6,16 @@ description: Add juice and polish to your game with screen shake, particles, coy
 
 ## What This Command Does
 
-Adds juice and polish to make your game feel amazing:
+Adds juice and polish to make your game feel amazing (full catalog + per-engine API map + starting
+values in `guides/game-feel.md`; expose every value as config per `rules/configuration-and-tuning.md`):
 - ✅ Screen shake (trauma-based)
 - ✅ Coyote time and jump buffer (platformers)
-- ✅ Hit stop / freeze frames (combat)
+- ✅ Variable jump height + asymmetric gravity (snappy arc)
+- ✅ Hit stop / freeze frames + slow-mo (combat)
+- ✅ Knockback and camera kick on impact
 - ✅ Particle effects (landing, hit, death)
 - ✅ Camera effects (punch, zoom, lerp)
-- ✅ Visual feedback (flash, squash & stretch)
+- ✅ Visual feedback (flash, squash & stretch, anticipation/follow-through)
 - ✅ Audio layering and pitch variation
 - ✅ Controller vibration
 

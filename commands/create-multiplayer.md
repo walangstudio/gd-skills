@@ -21,7 +21,7 @@ Adds multiplayer networking to your game:
    - Network model (Client-server, P2P, Relay)
    - Player count (2, 4, 8, 16+)
    - What to sync (Position, Health, Inventory, World state)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Generate networking layer**
 

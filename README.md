@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **5 major game engines** (Godot, Roblox, Unity, Unreal, Web) with **11 genre templates**, **16 specialized agents**, **27 skills**, and **32 commands**.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **40 commands** — plus a depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) and **autonomous validation** baked into every `/create-*` so generated games are self-checked and self-fixed before you see them.
 
 ### Create a Full Game in Seconds
 
@@ -40,14 +40,16 @@ Create complete, playable games instantly:
 - **Roblox 2025+** (Luau with strict typing)
 - **Unity 6 / 2023.2+** (C#)
 - **Unreal Engine 5.4+** (C++/Blueprints)
+- **Defold 1.9+** (Lua, collection/GameObject/component model, Box2D)
 - **JavaScript** (Phaser 3.80+, Three.js, Babylon.js)
 
-### 16 Specialized Agents
-- **Engine specialists** (5): Godot, Roblox, Unity, Unreal, JavaScript
+### 20 Specialized Agents
+- **Engine specialists** (6): Godot, Roblox, Unity, Unreal, Defold, JavaScript
 - **Debuggers** (5): Performance, Physics, AI, Audio, Network
 - **Builders** (3): Full game, Component, Genre template
 - **Polish** (2): Game architect, Game feel specialist
 - **Validation** (1): Integration validator (cross-component wiring checks)
+- **Disciplines** (3): Narrative designer, Accessibility specialist, Security engineer
 
 ### 9 Shared Component Skills
 Reusable game systems **shared across all genre templates** — every template references these instead of duplicating patterns:
@@ -181,10 +183,11 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 /setup-unreal             # Unreal project structure + framework
 /setup-roblox             # Roblox service hierarchy + DataStore
 /setup-roblox-toolchain   # Rokit, Rojo, Wally, CI pipeline
+/setup-defold             # Defold project structure + bootstrap collection
 /setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 32 Commands
+## All 40 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -221,14 +224,17 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/add-game-feel` | Add juice and polish |
 | `/optimize-performance` | Performance optimization |
 
-### Debugging & Validation (3)
+### Debugging & Validation (6)
 | Command | Description |
 |---------|-------------|
 | `/debug-game` | Debug specific issue |
 | `/debug-existing` | Full project audit |
+| `/verify-project` | Post-generation gate: completeness, wiring, consistency, configurability, core loop |
 | `/validate-integration` | Cross-component wiring check (events, references, data flow) |
+| `/consistency-check` | Cross-check code/docs against the entity registry (stats, items, formulas) |
+| `/self-repair` | Run via engine MCP, screenshot, diff vs intent, auto-fix (Godot/Defold first) |
 
-### Engine Setup (6)
+### Engine Setup (7)
 | Command | Description |
 |---------|-------------|
 | `/setup-godot` | Godot project structure |
@@ -236,9 +242,18 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/setup-unreal` | Unreal project structure |
 | `/setup-roblox` | Roblox Studio project structure |
 | `/setup-roblox-toolchain` | Roblox external toolchain (Rokit, Rojo, Wally, CI) |
+| `/setup-defold` | Defold project structure + bootstrap collection |
 | `/setup-web` | Web game with Vite bundler |
 
-## All 16 Agents
+### Workflow (4)
+| Command | Description |
+|---------|-------------|
+| `/checkpoint` | Update the session checkpoint (`design/session/active.md`) after a milestone |
+| `/review-gate` | Show/set review mode (solo/lean/full) for opt-in phase sign-offs |
+| `/build-team` | Align architect + engine + feel + integration on one system in a coordinated pass |
+| `/acceptance` | Generate Given/When/Then acceptance criteria + failing test stubs for a feature |
+
+## All 20 Agents
 
 | Agent | Role |
 |-------|------|
@@ -246,6 +261,7 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `unity-specialist` | Unity/C# expert |
 | `unreal-specialist` | Unreal/C++ expert |
 | `roblox-specialist` | Roblox/Luau expert |
+| `defold-specialist` | Defold/Lua expert (message passing, factories, Box2D) |
 | `javascript-specialist` | Web game expert |
 | `performance-debugger` | FPS, memory, GPU optimization |
 | `physics-debugger` | Jittering, tunneling, collisions |
@@ -258,8 +274,11 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `game-architect` | Architecture and design |
 | `game-feel-specialist` | Juice and polish |
 | `integration-validator` | Cross-component wiring validation |
+| `narrative-designer` | Story, lore, dialogue structure, characters |
+| `accessibility-specialist` | Remappable controls, colorblind-safe, captions, assists |
+| `security-engineer` | Server authority, save-tamper, anti-cheat (online games) |
 
-## All 27 Skills
+## All 28 Skills
 
 ### Genre Templates (11)
 `platformer-template`, `fps-template`, `horror-template`, `rpg-template`, `survival-template`, `farming-template`, `racing-template`, `puzzle-template`, `tower-defense-template`, `classic-games-template`, `roguelike-template`
@@ -267,13 +286,13 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 ### Shared Components (9)
 `player-controllers`, `enemy-ai-patterns`, `inventory-systems`, `combat-systems`, `save-load-systems`, `audio-systems`, `ui-menu-systems`, `camera-systems`, `dialogue-systems`
 
-### Engine Patterns (6)
-`godot-patterns`, `unity-patterns`, `unreal-patterns`, `roblox-patterns`, `roblox-toolchain`, `javascript-patterns`
+### Engine Patterns (7)
+`godot-patterns`, `unity-patterns`, `unreal-patterns`, `roblox-patterns`, `roblox-toolchain`, `defold-patterns`, `javascript-patterns`
 
 ### Other (1)
 `full-game-structure`
 
-## All 6 Rules
+## All 7 Rules
 
 Coding standards automatically applied per engine:
 
@@ -285,21 +304,43 @@ Coding standards automatically applied per engine:
 | `roblox-style` | Luau strict typing, service architecture, DataStore patterns |
 | `unity-style` | C# conventions, MonoBehaviour patterns, ScriptableObjects |
 | `unreal-style` | C++/Blueprint conventions, UE5 framework patterns |
+| `defold-style` | Plain Lua, message passing, factories, component/collection model |
 
 ## Plugin Architecture
 
 ```
 gd-skills/
-├── agents/           (16 specialized agents)
-├── skills/           (27 skills with code templates)
-├── commands/         (32 slash commands)
-├── rules/            (6 coding standards)
+├── agents/           (20 specialized agents)
+├── skills/           (28 skills with code templates)
+├── commands/         (39 slash commands)
+├── rules/            (8 coding standards)
 ├── hooks/            (automation)
 ├── scripts/
 │   └── helpers/      (Node.js helpers used by install.bat)
 ├── contexts/         (engine modes)
+├── docs/             (version-pinned engine reference docs)
+├── guides/           (architecture / design pattern guides)
+├── design/           (entity registry + session-state templates)
+├── samples/          (runnable sample games; logic unit-tested headless)
 └── examples/         (configurations)
 ```
+
+## Depth Layer
+
+Beyond fast generation, gd-skills self-validates its output and ships reference material agents consult on demand.
+
+- **Engine reference docs** (`docs/engine-reference/<engine>/`) — version-pinned API notes per engine with an explicit LLM knowledge cutoff, so agents don't invent post-cutoff APIs.
+- **Architecture guides** (`guides/`) — distilled pattern guides (message passing, ECS vs component, game loop/timestep, object pooling, event bus, data-driven design, state machines, behavior trees) with per-engine mappings.
+- **Entity registry + `/consistency-check`** (`design/registry/`) — a single source of truth for cross-system facts (enemy stats, item costs, formulas); the command flags code/docs that disagree.
+- **Session-state + `/checkpoint`** (`design/session/active.md`) — a portable checkpoint surfaced at session start; optionally backed by a mememo MCP for persistent agent memory.
+- **Autonomous validation (always on)** (`guides/autonomous-validation.md`) — every `/create-*` and build self-validates before handing back: wiring check, registry consistency, and a functional self-check of the core loop, fixing what it finds and reporting a **Verification** summary. You review a working game, not a broken one.
+- **Review gates + `/review-gate`** (`guides/review-gates.md`) — tiered DESIGN rigor on top of that baseline: solo (default, output still validated) / lean (phase gate) / full (gate every system).
+- **Team orchestration + `/build-team`** — aligns architect, engine specialist, game-feel, and integration on one system in a single coordinated pass.
+- **Doc templates** (`docs/templates/`) — GDD, ADR, technical design, content plan, milestone plan, playtest report.
+- **Prompt cookbook** (`guides/prompt-cookbook.md`) — curated, copy-paste prompts per genre/system/engine that actually land.
+- **Verification-driven dev + `/acceptance`** (`guides/verification-driven-dev.md`) — testable Given/When/Then criteria + per-engine failing test stubs; active in lean/full review mode.
+- **Self-repair loop + `/self-repair`** (`guides/self-repair-loop.md`) — with a connected engine MCP, run the game, screenshot, diff vs intent, and auto-fix visible defects (Godot/Defold first). Requires an engine MCP; explains setup if absent.
+- **RAG setup** (`guides/rag-setup.md`) — optional power-user path to index the engine reference docs into a mememo vector store for live, version-correct API retrieval.
 
 ## License
 

@@ -56,7 +56,7 @@ for f in "$PLUGIN_DIR"/commands/*.md; do
             echo "  ERROR: $cmd_name references unknown agent: $agent_ref"
             ERRORS=$((ERRORS + 1))
         fi
-    done < <(grep -oP '(?:\*\*|`)([a-z]+-[a-z-]+(?:-specialist|-builder|-master|-debugger|-architect))(?:\*\*|`)' "$f" | sed 's/[*`]//g' | sort -u)
+    done < <(grep -oP '(?:\*\*|`)([a-z][a-z-]*(?:-specialist|-builder|-master|-debugger|-architect|-designer|-engineer))(?:\*\*|`)' "$f" | sed 's/[*`]//g' | sort -u)
 done
 echo ""
 
@@ -72,7 +72,7 @@ for f in "$PLUGIN_DIR"/commands/*.md "$PLUGIN_DIR"/agents/*.md; do
             echo "  ERROR: $src_name references unknown skill: $skill_ref"
             ERRORS=$((ERRORS + 1))
         fi
-    done < <(grep -oP '`([a-z]+-[a-z-]+(?:-template|-systems|-patterns|-controllers|-structure))`' "$f" | sed 's/`//g' | sort -u)
+    done < <(grep -oP '`([a-z][a-z-]*(?:-template|-systems|-patterns|-controllers|-structure))`' "$f" | sed 's/`//g' | sort -u)
 done
 echo ""
 
@@ -89,7 +89,7 @@ for d in "$PLUGIN_DIR"/skills/*/; do
             echo "  ERROR: $skill_name references unknown skill: $ref"
             ERRORS=$((ERRORS + 1))
         fi
-    done < <(grep -oP '`([a-z]+-[a-z-]+(?:-template|-systems|-patterns|-controllers|-structure))`' "$skill_file" | sed 's/`//g' | sort -u)
+    done < <(grep -oP '`([a-z][a-z-]*(?:-template|-systems|-patterns|-controllers|-structure))`' "$skill_file" | sed 's/`//g' | sort -u)
 done
 echo ""
 

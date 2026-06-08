@@ -534,4 +534,12 @@ SaveSystem.save('gameProgress', {
 const progress = SaveSystem.load('gameProgress');
 ```
 
+## Version Reference
+
+Before emitting code, consult `docs/engine-reference/web/VERSION.md` and the relevant `docs/engine-reference/web/modules/<domain>.md`. Don't use APIs newer than the pinned version; if an API isn't documented there and you're unsure, treat it as unverified rather than inventing signatures.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise fall back to `design/session/active.md`.
+
 **Remember**: Use ES2024 features, prefer const/let over var, use Phaser 3.80+ for 2D, Three.js r160+ for 3D graphics, Babylon.js 7.0+ for full game engines, implement proper game loops, handle both mouse and touch input, and use localStorage for save data.

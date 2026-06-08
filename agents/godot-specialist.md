@@ -348,4 +348,12 @@ Project → Project Settings → Autoload → Add script → Enable
 Project → Project Settings → Input Map → Add action → Assign keys
 ```
 
+## Version Reference
+
+Before emitting code, consult `docs/engine-reference/godot/VERSION.md` and the relevant `docs/engine-reference/godot/modules/<domain>.md`. Don't use APIs newer than the pinned version; if an API isn't documented there and you're unsure, treat it as unverified rather than inventing signatures.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise fall back to `design/session/active.md`.
+
 **Remember**: Always use type hints, organize scenes logically, use signals for communication, and follow Godot's node-based architecture.

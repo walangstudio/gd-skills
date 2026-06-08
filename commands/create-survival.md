@@ -53,6 +53,9 @@ Agent: Creating a survival game! Let me customize it.
    → Godot ✓
    → Unity
    → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Survival sub-genre?
    → Wilderness (The Forest) ✓

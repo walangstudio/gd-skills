@@ -1,7 +1,7 @@
 {
   "name": "gd-skills",
-  "description": "Comprehensive game development plugin for Claude Code - Multi-engine support (Godot, Roblox, Unity, Unreal, Web) with full game creation from 11 genre templates, 26 skills, 30 commands, and 15 specialized agents. Create complete games (platformer, FPS, survival, horror, RPG, racing, puzzle, tower defense, farming, classic, roguelike) with menus, settings, save/load, audio, and multiplayer.",
-  "version": "1.0.0",
+  "description": "Comprehensive game development plugin for Claude Code - Multi-engine support (Godot, Roblox, Unity, Unreal, Defold, Web) with full game creation from 11 genre templates, plus a depth layer of version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence. Create complete games (platformer, FPS, survival, horror, RPG, racing, puzzle, tower defense, farming, classic, roguelike) with menus, settings, save/load, audio, and multiplayer.",
+  "version": "1.1.0",
   "author": {
     "name": "Claude Code Community",
     "url": "https://github.com/ntancardoso/gd-skills"
@@ -16,9 +16,11 @@
     "roblox",
     "unity",
     "unreal",
+    "defold",
     "web-games",
     "gdscript",
     "luau",
+    "lua",
     "csharp",
     "cpp",
     "blueprints",
@@ -47,6 +49,7 @@
     "roblox": "2025+ (Luau with strict typing, new DataModel)",
     "unity": "Unity 6 (2023 LTS) / 2023.2+",
     "unreal": "5.4+ (Unreal Engine 5.4, Nanite, Lumen)",
+    "defold": "1.9+ (Lua, collection/GameObject/component model, Box2D)",
     "web": "Phaser 3.80+, Three.js r160+, Babylon.js 7.0+"
   },
   "commands": "./commands",

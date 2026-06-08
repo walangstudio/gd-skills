@@ -220,7 +220,7 @@ set "BACKED_UP=0"
 
 if exist "%MARKER%" (
     if /i "%T%"=="claude" (
-        for %%c in (agents skills commands rules) do (
+        for %%c in (agents skills commands rules docs guides design) do (
             if exist "%DEST_DIR%\%%c" (
                 if "!BACKED_UP!"=="0" (
                     mkdir "%BACKUP_DIR%" 2>nul
@@ -246,7 +246,7 @@ if not exist "%DEST_DIR%" mkdir "%DEST_DIR%"
 set "TOTAL=0"
 
 if /i "%T%"=="claude" (
-    for %%c in (agents skills commands rules) do (
+    for %%c in (agents skills commands rules docs guides design) do (
         set "SRC=%SCRIPT_DIR%\%%c"
         set "DST=%DEST_DIR%\%%c"
         if not exist "!SRC!" (
@@ -315,7 +315,7 @@ if not exist "%MARKER%" (
 echo   [%LABEL%] Uninstalling...
 
 if /i "%T%"=="claude" (
-    for %%c in (agents skills commands rules) do (
+    for %%c in (agents skills commands rules docs guides design) do (
         set "SRC=%SCRIPT_DIR%\%%c"
         set "DST=%DEST_DIR%\%%c"
         if exist "!SRC!" if exist "!DST!" (
