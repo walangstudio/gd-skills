@@ -40,6 +40,7 @@ tilemap.set_tile("/level#tilemap", "ground", x, y, tile_index)
 - Sprite `tint` is a `vector4` (RGBA, 0..1); animate via `go.animate("#sprite", "tint", ...)`.
 - Atlas animation ids are hashes; `sprite.play_flipbook` accepts the string and hashes it.
 - Z-order/draw order comes from the render script predicates + the component's Z position, not a single "layer" field.
+- **`.render` file format:** a RenderPrototypeDesc holds ONLY `script:` (+ optional material/render-target bindings) — it has NO `clear_color` or any draw-state field. Adding one fails to load: *"unknown fields ... RenderPrototypeDesc.clear_color"*. Set the clear color in the `.render_script` via `render.clear({[render.BUFFER_COLOR_BIT] = vmath.vector4(r,g,b,a), ...})`. Most games don't need a custom `.render` at all — `game.project` `[render]` already points at `/builtins/render/default.render`. See the `defold-patterns` skill "Scene & Component File Formats".
 
 ## See also
 - `defold-patterns` skill, `defold-style` rule, `defold-specialist` agent
