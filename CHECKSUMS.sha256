@@ -57,6 +57,7 @@ aa1713c8f320fdb899ea62d19baf86eae231d2a6  commands/setup-roblox.md
 5cdcab9c218fd0a0e319d8465efdcb9888dc3f33  commands/setup-unreal.md
 079bb2081864bb6cef328e090985f9420f2f74a4  commands/setup-web.md
 2a313b6033bda86c64dd2185db3e4f517899da8c  commands/validate-integration.md
+77ff26f5d5a5b0c66cb8321c0c571239dcb1aeb7  commands/verify-project.md
 114168bfaece9b79679bde633c0db6d28bb8c0c1  contexts/defold-mode.md
 2bb103e10541df8014a72eada0babf2c32a3555f  contexts/godot-mode.md
 b74b3dd06f7f2bf38d4509ce6ddf4fc78f9751bd  contexts/roblox-mode.md
@@ -71,6 +72,7 @@ b0b57392d6f19e4c2e5be2283d8d2e420a37f83d  hooks/check-unity-conventions.js
 22d48b6b896070a71a6b5c87af4adea1c1a24941  hooks/check-unreal-conventions.js
 10c89e15b87a81e38d6a77d1e6f455953aacd824  hooks/hooks.json
 7ab6f97b2bbac281c6ecb523e3d8769b8602c42a  hooks/show-session-state.js
+78a7d606a46e6a09aa21336075a12728d444a5de  rules/configuration-and-tuning.md
 a749ed6648b6d9b4c300b583ae7d265a7b5a1d7f  rules/debugging-practices.md
 50f52a6130b3ec88bdafcddcfe14080b33b523db  rules/defold-style.md
 304983e5eb59255c321a5869b5124d25a175b902  rules/godot-style.md

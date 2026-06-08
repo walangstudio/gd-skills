@@ -4,7 +4,7 @@
 
 ## Overview
 
-**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **39 commands** — plus a depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) and **autonomous validation** baked into every `/create-*` so generated games are self-checked and self-fixed before you see them.
+**gd-skills** is a game development plugin for Claude Code, providing instant game creation across **6 major game engines** (Godot, Roblox, Unity, Unreal, Defold, Web) with **11 genre templates**, **20 specialized agents**, **28 skills**, and **40 commands** — plus a depth layer (version-pinned engine reference docs, architecture pattern guides, an entity registry with consistency checks, and session-state persistence) and **autonomous validation** baked into every `/create-*` so generated games are self-checked and self-fixed before you see them.
 
 ### Create a Full Game in Seconds
 
@@ -187,7 +187,7 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 /setup-web                # Web game with Vite + Phaser/Three.js
 ```
 
-## All 39 Commands
+## All 40 Commands
 
 ### Game Creation (12)
 | Command | Description |
@@ -224,11 +224,12 @@ xcopy /e /i /y rules %USERPROFILE%\.claude\rules\
 | `/add-game-feel` | Add juice and polish |
 | `/optimize-performance` | Performance optimization |
 
-### Debugging & Validation (5)
+### Debugging & Validation (6)
 | Command | Description |
 |---------|-------------|
 | `/debug-game` | Debug specific issue |
 | `/debug-existing` | Full project audit |
+| `/verify-project` | Post-generation gate: completeness, wiring, consistency, configurability, core loop |
 | `/validate-integration` | Cross-component wiring check (events, references, data flow) |
 | `/consistency-check` | Cross-check code/docs against the entity registry (stats, items, formulas) |
 | `/self-repair` | Run via engine MCP, screenshot, diff vs intent, auto-fix (Godot/Defold first) |
@@ -312,7 +313,7 @@ gd-skills/
 ├── agents/           (20 specialized agents)
 ├── skills/           (28 skills with code templates)
 ├── commands/         (39 slash commands)
-├── rules/            (7 coding standards)
+├── rules/            (8 coding standards)
 ├── hooks/            (automation)
 ├── scripts/
 │   └── helpers/      (Node.js helpers used by install.bat)
