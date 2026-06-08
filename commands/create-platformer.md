@@ -68,7 +68,7 @@ Agent: Creating a complete 2D platformer! Let me customize it for you.
 
 2. Perspective?
    → 2D side-scrolling ✓
-   → 2.5D (3D graphics, 2D gameplay)
+   → 2.5D cinematic (3D world, 2D gameplay — REPLACED style)
    → 3D platformer
 
 3. Player abilities? (Select multiple)

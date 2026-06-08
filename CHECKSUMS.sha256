@@ -35,7 +35,7 @@ fe732540b5c28c872156ad7b17e83b6e49ec00f1  commands/create-horror.md
 5f81a0f19fc0cdb0bac0fe09359b0573d3312863  commands/create-level.md
 3316d405d0929c0e5df5d69538260c58780d3294  commands/create-menu.md
 6baa53d32b863ca22271a51d7157be562cfa4cea  commands/create-multiplayer.md
-bc26602ee0976315aa06f0df99b9b0b4ee2cb98a  commands/create-platformer.md
+e6ec0525e7be6235f6da1cd5658c2150ff05c953  commands/create-platformer.md
 8b63561466f6d315a41915a6ac12103658b0d852  commands/create-player.md
 0d93512c9fed55e736cd085528480f93c1d4dc95  commands/create-puzzle.md
 b4f38b3a308dba35c7f22707dfb129b22630fba2  commands/create-racing.md
@@ -92,7 +92,7 @@ bf634f3c40dba6ffb2d7b792a23e375f5b952659  skills/fps-template/SKILL.md
 40a0e1ca39a05149f875660be6efaabde5a2883f  skills/horror-template/SKILL.md
 9cd23557dd28520f88d155eee3f4437adf991fd4  skills/inventory-systems/SKILL.md
 1f2f9673b21564399ccdc6a82ca46c253cbee823  skills/javascript-patterns/SKILL.md
-9348f3f2cd571a5c04a133c03b52ec79c8b99b18  skills/platformer-template/SKILL.md
+2b61562bb90e93173f78bb68bd7fa512e0685474  skills/platformer-template/SKILL.md
 bf261302c50782cb5000d6391e030554bc7c6b18  skills/player-controllers/SKILL.md
 d4fab510bc8200ef5d7cd3a7d1377fa22af889cf  skills/puzzle-template/SKILL.md
 1253d7f6a2450de20752f9d33f5c5e43aae6fb6c  skills/racing-template/SKILL.md
