@@ -24,6 +24,7 @@ A complete, dependency-free, **headless-tested** reference for this genre ships 
 2. **Turn-Based** (Final Fantasy, Pokemon) - Menu-based combat
 3. **Tactics** (Fire Emblem, XCOM) - Grid-based strategy
 4. **Action-Adventure** (Zelda) - Light RPG elements
+5. **HD-2D JRPG** (Octopath Traveler, Triangle Strategy) - 2D sprites in a 3D world, turn-based combat
 
 ## Core Features
 
@@ -753,9 +754,48 @@ end
 
 ---
 
+## HD-2D / 2.5D JRPG (Octopath Traveler style)
+
+"HD-2D" (Octopath Traveler, Triangle Strategy, Live A Live) = 2D pixel-art sprites
+**billboarded inside a real 3D scene**, with a tilted camera and heavy post-processing
+(depth-of-field/tilt-shift, bloom, dynamic lighting, color grading). It is a 3D scene that
+*looks* 2D — NOT an isometric tilemap (that's "2.5D isometric"). Pair it with the **Turn-Based
+Combat** section above for the JRPG loop; the Octopath signature on top is **Break** (hit an
+enemy's elemental/weapon weakness to stagger it) + **Boost** (spend accumulated points to
+amplify an action).
+
+The gameplay systems are the same RPG systems above — only the rendering setup is special:
+
+### Godot 4
+```gdscript
+# Characters/enemies are Sprite3D in a 3D scene, billboarded to always face the camera.
+# In the editor: Sprite3D.billboard = Enabled (or Y-Billboard to stay upright),
+# texture_filter = Nearest (crisp pixels), pixel_size ~ 0.01. Environments are low-poly 3D.
+func _setup_hd2d(cam: Camera3D, world_env: WorldEnvironment) -> void:
+    cam.projection = Camera3D.PROJECTION_ORTHOGONAL    # classic flat look (perspective also works)
+    cam.rotation_degrees.x = -30                        # tilt down over the diorama
+    var attrs := CameraAttributesPractical.new()
+    attrs.dof_blur_far_enabled = true                  # tilt-shift: blur the far plane
+    attrs.dof_blur_far_distance = 12.0
+    attrs.dof_blur_near_enabled = true                 # ...and the near plane
+    cam.attributes = attrs
+    var e := world_env.environment
+    e.glow_enabled = true                              # bloom
+    e.adjustment_enabled = true                        # color grading
+```
+
+### Other engines
+- **Unity (URP):** SpriteRenderer billboarded toward the camera (`Filter Mode = Point`) in a 3D scene; a URP **Volume** with **Depth Of Field (Bokeh)** + **Bloom** + **Color Adjustments/Tonemapping**; perspective camera tilted ~30°.
+- **Unreal:** Paper2D `PaperSpriteComponent` sprites (enable "Use as Billboard") in a 3D level; a **Post Process Volume** with cinematic **Depth of Field**, **Bloom**, and grading.
+- **Web (Three.js):** `THREE.Sprite` (auto-faces camera) or a billboarded plane with a `NearestFilter` texture; `EffectComposer` + **BokehPass** (DOF) + **UnrealBloomPass**; tilted perspective/orthographic camera. Closest web analog to HD-2D.
+- **Roblox:** billboarded Decals / `BillboardGui` sprites in a 3D world; `Lighting` post-FX `DepthOfFieldEffect` + `BloomEffect` + `ColorCorrectionEffect`.
+- **Defold:** a 2D-first engine — true HD-2D (sprites in 3D + DOF) is advanced (custom perspective render script + a depth-of-field post material). For a 2.5D *look* prefer layered parallax + scaled sprites; pick Godot/Unity/Unreal for genuine HD-2D.
+
+Consult `docs/engine-reference/<engine>/modules/rendering.md` for the target engine's exact post-processing API before emitting code.
+
 ## Customization Options
 
-**Perspective**: 2D top-down, 2.5D isometric, 3D third-person
+**Perspective**: 2D top-down, 2.5D isometric, 2.5D HD-2D (Octopath Traveler), 3D third-person
 **Combat**: Action (real-time), Turn-based, Tactics (grid)
 **World**: Linear, Semi-open, Open-world
 **Party**: Solo hero, Party of 4, Army

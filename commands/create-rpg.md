@@ -28,7 +28,7 @@ The **genre-template-master** agent will:
 
 1. **Ask customization questions** via AskUserQuestion:
    - Target engine
-   - Perspective (2D, 2.5D, 3D)
+   - Perspective (2D top-down, 2.5D isometric, 2.5D HD-2D / Octopath, 3D)
    - Combat type (Action, Turn-based, Tactics)
    - World structure (Linear, Open)
    - Party size
@@ -59,6 +59,7 @@ Agent: Creating an RPG! Let me customize it.
 2. Perspective?
    → 2D top-down
    → 2.5D isometric
+   → 2.5D HD-2D (Octopath Traveler style)
    → 3D third-person ✓
 
 3. Combat type?
