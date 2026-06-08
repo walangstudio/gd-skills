@@ -25,8 +25,10 @@ project that wasn't built by this plugin.
 ## What it checks
 
 1. **Completeness** — every system the game promised exists (player, enemies, combat, UI, menus,
-   save/load, audio as applicable); no TODO / stub / placeholder / empty handler left behind;
-   every referenced scene/prefab/script/asset path resolves; there is a runnable entry point.
+   save/load, **audio** — a manager + music + SFX hooks, and **baseline game feel / polish**
+   per `guides/game-feel.md` appropriate to the genre); no TODO / stub / placeholder / empty
+   handler left behind; every referenced scene/prefab/script/asset path resolves; there is a
+   runnable entry point. Audio and polish count as part of "done", not optional extras.
 2. **Wiring** — the `integration-validator`: every signal/event has a listener, no null/nil refs
    at entry points, save covers runtime state, client/server (Roblox) and scene/prefab
    (Unity/Godot) links hold.
@@ -48,12 +50,14 @@ project that wasn't built by this plugin.
 | Check           | Status | Detail                                                |
 |-----------------|--------|-------------------------------------------------------|
 | Completeness    | PASS   | 8/8 promised systems present, no stubs / dead refs    |
+| Audio           | PASS   | AudioManager + music + SFX on jump/coin/hit/death     |
+| Polish          | WARN   | has screen shake; missing coyote time + jump buffer   |
 | Wiring          | PASS   | all signals connected; save covers inventory          |
 | Consistency     | WARN   | goblin damage 7 in code vs 5 in registry              |
 | Configurability | FAIL   | player speed/jump hardcoded in player.gd:42,55        |
 | Core loop       | PASS   | move ✓, reach exit → win ✓, hit → lose life → over ✓   |
 
-### Summary — PASS 3 | WARN 1 | FAIL 1
+### Summary — PASS 4 | WARN 2 | FAIL 1
 
 ### Proposed fixes
 1. [Config] Hoist player.gd speed (200) / jump (-400) to `@export` vars (or a tuning Resource).
