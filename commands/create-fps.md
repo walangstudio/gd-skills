@@ -29,7 +29,7 @@ Creates a complete, playable FPS game with:
 The **genre-template-master** agent will:
 
 1. **Ask customization questions** via AskUserQuestion:
-   - Target engine (Godot, Unity, Unreal)
+   - Target engine (Godot, Unity, Unreal, Roblox, Web, Defold)
    - Weapon types (pistol, shotgun, rifle, melee)
    - Enemy types (melee, ranged, boss)
    - Level style (linear, arena, exploration)
@@ -58,6 +58,9 @@ Agent: Creating a complete first-person shooter! Let me customize it.
    → Godot (Recommended for 3D) ✓
    → Unity
    → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Weapons? (Select multiple)
    → Pistol ✓

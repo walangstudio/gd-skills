@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tile RPG</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 16px; line-height: 1.5; }
+    #hud b { color: #6cc4ff; }
+    #state { color: #7CFC9A; }
+    canvas { background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    HP <b id="hp">20/20</b> &nbsp;|&nbsp; Lvl <b id="lvl">1</b> &nbsp;|&nbsp;
+    Gold <b id="gold">0</b> &nbsp;|&nbsp; Potions <b id="pot">0</b><br />
+    Arrows/WASD move &amp; bump-attack &nbsp;|&nbsp; P drink potion &nbsp;|&nbsp; R restart
+    &nbsp; <span id="state"></span>
+  </div>
+  <canvas id="game" width="320" height="240"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

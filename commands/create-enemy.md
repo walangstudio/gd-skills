@@ -30,7 +30,7 @@ The agent will:
    - AI behavior (Patrol, Guard, Stalk, Swarm)
    - Detection method (Line of sight, Proximity, Sound)
    - Game dimension (2D, 3D)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Load enemy-ai-patterns** skill → matching pattern
 

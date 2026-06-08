@@ -47,6 +47,11 @@ Agent: Creating a tower defense game! Let me customize it.
 
 1. Which engine?
    → Godot ✓
+   → Unity
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. TD type?
    → Classic TD (Bloons style) ✓

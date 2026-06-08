@@ -111,7 +111,7 @@ get_target_label() {
 # Claude gets everything; others get rules (as their native format) + skills/commands as rules.
 get_target_components() {
     case $1 in
-        claude)    echo "agents skills commands rules" ;;
+        claude)    echo "agents skills commands rules docs guides design" ;;
         cursor)    echo "rules" ;;
         windsurf)  echo "rules" ;;
         copilot)   echo "rules" ;;

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roguelike</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #14161c; color: #e6e6e6;
+      font-family: system-ui, sans-serif; display: grid; place-items: center; }
+    #hud { position: fixed; top: 12px; left: 12px; font-size: 16px; line-height: 1.5; }
+    #hud b { color: #6cc4ff; }
+    canvas { background: #1d2330; border-radius: 8px; box-shadow: 0 6px 24px #0008; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    HP: <b id="hp">10 / 10</b> &nbsp;|&nbsp; Depth: <b id="depth">1 / 3</b> &nbsp;|&nbsp; <span id="state">playing</span><br />
+    Arrow keys / WASD to move &amp; attack &nbsp;|&nbsp; Space to wait &nbsp;|&nbsp; R to restart &nbsp;|&nbsp; reach <b>&gt;</b> to descend
+  </div>
+  <canvas id="game" width="576" height="384"></canvas>
+  <script src="logic.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

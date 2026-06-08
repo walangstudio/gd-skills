@@ -59,7 +59,7 @@ jobs:
           errors=0
 
           # Verify all backtick-wrapped slash commands: `/command-name`
-          for cmd in $(tr -d '\r' < README.md | grep -oP '(?<=`/)[a-z]+-[a-z-]+(?=`)' | sort -u); do
+          for cmd in $(tr -d '\r' < README.md | grep -oP '(?<=`/)[a-z][a-z-]*(?=`)' | sort -u); do
             if [ ! -f "commands/$cmd.md" ]; then
               echo "ERROR: README references /$cmd but commands/$cmd.md does not exist"
               errors=$((errors + 1))
@@ -67,7 +67,7 @@ jobs:
           done
 
           # Verify all backtick-wrapped agent names
-          for agent in $(tr -d '\r' < README.md | grep -oP '(?<=`)[a-z]+-[a-z-]*(?:specialist|builder|master|debugger|architect)(?=`)' | sort -u); do
+          for agent in $(tr -d '\r' < README.md | grep -oP '(?<=`)[a-z]+-[a-z-]*(?:specialist|builder|master|debugger|architect|designer|engineer)(?=`)' | sort -u); do
             if [ ! -f "agents/$agent.md" ]; then
               echo "ERROR: README references agent $agent but agents/$agent.md does not exist"
               errors=$((errors + 1))
@@ -80,3 +80,8 @@ jobs:
             echo "$errors error(s) found."
             exit 1
           fi
+
+      - name: Run sample logic tests
+        run: |
+          chmod +x scripts/test-samples.sh
+          bash scripts/test-samples.sh

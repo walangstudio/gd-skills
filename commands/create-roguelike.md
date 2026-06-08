@@ -28,7 +28,7 @@ Creates a complete, playable roguelike/roguelite game with:
 The **genre-template-master** agent will:
 
 1. **Ask customization questions** via AskUserQuestion:
-   - Target engine (Godot, Unity, Unreal, Web)
+   - Target engine (Godot, Unity, Unreal, Roblox, Web, Defold)
    - Sub-genre (action, deckbuilder, bullet hell, traditional, auto-battler)
    - Perspective (top-down 2D, side-scroll, 3D)
    - Run length (short 5 floors, medium 10, long 20)
@@ -57,6 +57,11 @@ Agent: Creating a roguelike! Let me customize it for you.
 
 1. Which engine?
    → Godot (Recommended) ✓
+   → Unity
+   → Unreal
+   → Roblox
+   → Web (Phaser / HTML5)
+   → Defold
 
 2. Sub-genre?
    → Action Roguelike (Hades/Dead Cells) ✓

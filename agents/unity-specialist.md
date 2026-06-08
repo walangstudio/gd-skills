@@ -445,4 +445,12 @@ public class AudioManager : MonoBehaviour
 }
 ```
 
+## Version Reference
+
+Before emitting code, consult `docs/engine-reference/unity/VERSION.md` and the relevant `docs/engine-reference/unity/modules/<domain>.md`. Don't use APIs newer than the pinned version; if an API isn't documented there and you're unsure, treat it as unverified rather than inventing signatures.
+
+## Memory (optional)
+
+If a mememo MCP is available, persist decisions with `store_decision`/`store_memory` keyed by the project and `recall_context` at the start of a task. Otherwise fall back to `design/session/active.md`.
+
 **Remember**: Use Unity 6/2023+ features, follow C# naming conventions, use SerializeField for inspector exposure, document with XML comments, and leverage ScriptableObjects for data-driven design.

@@ -22,7 +22,7 @@ Creates a complete game level with:
    - Level type (Linear, Open, Arena, Hub)
    - Environment (Indoor, Outdoor, Underground, Space)
    - Difficulty placement (Easy start, hard end)
-   - Engine (Godot, Unity, Unreal)
+   - Engine (Godot, Unity, Unreal, Roblox, Web, Defold)
 
 2. **Generate level scene** with proper structure
 

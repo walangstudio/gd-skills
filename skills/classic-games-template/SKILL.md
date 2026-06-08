@@ -7,6 +7,10 @@ description: Classic game templates for arcade, card, board, puzzle, and retro g
 
 Production-ready templates for classic and arcade game genres.
 
+## Verified Reference Implementation
+
+Complete, dependency-free, **headless-tested** references for this genre ship in the gd-skills repo: `samples/web/snake/` (7 groups), `samples/web/breakout/` (13 groups), and `samples/web/asteroids/` (13 groups). Each splits pure mechanics in `logic.js` (run `node test.js`) from rendering/input in `game.js`. Mirror that split when you generate — it keeps the core loop unit-testable, and the autonomous-validation loop can trace generated logic against this known-good reference. See each sample's `PROMPT.md` (the spec) and `NOTES.md` (verified vs visual).
+
 ## When to Use
 
 - Recreating classic arcade games
@@ -160,6 +164,138 @@ public class GameBoard : MonoBehaviour
 }
 ```
 
+### Defold
+
+The board is a plain Lua 2D table inside a controller script. Cell changes, line clears, and a full board are reported as messages so the renderer (a tilemap or pooled tile factory) reacts without reaching into this script. Dimensions are `go.property`. This is the Tetris/Snake grid model.
+
+```lua
+go.property("width", 10)
+go.property("height", 20)
+go.property("cell_size", 32)
+
+local MSG_CELL_CHANGED = hash("cell_changed")
+local MSG_LINE_CLEARED = hash("line_cleared")
+
+local function clear_board(self)
+	self.grid = {}
+	for y = 1, self.height do
+		self.grid[y] = {}
+		for x = 1, self.width do
+			self.grid[y][x] = 0
+		end
+	end
+end
+
+local function is_valid(self, x, y)
+	return x >= 1 and x <= self.width and y >= 1 and y <= self.height
+end
+
+function init(self)
+	clear_board(self)
+end
+
+local function set_cell(self, x, y, value)
+	if not is_valid(self, x, y) then return end
+	self.grid[y][x] = value
+	msg.post("#", MSG_CELL_CHANGED, { x = x, y = y, value = value })
+end
+
+local function get_cell(self, x, y)
+	if is_valid(self, x, y) then return self.grid[y][x] end
+	return -1
+end
+
+local function is_empty(self, x, y)
+	return is_valid(self, x, y) and self.grid[y][x] == 0
+end
+
+local function check_full_rows(self)
+	local full_rows = {}
+	for y = 1, self.height do
+		local full = true
+		for x = 1, self.width do
+			if self.grid[y][x] == 0 then full = false break end
+		end
+		if full then table.insert(full_rows, y) end
+	end
+	return full_rows
+end
+
+local function clear_row(self, row)
+	table.remove(self.grid, row)
+	local new_row = {}
+	for x = 1, self.width do new_row[x] = 0 end
+	table.insert(self.grid, 1, new_row)
+	msg.post("#", MSG_LINE_CLEARED, { row = row })
+end
+
+local function grid_to_world(self, x, y)
+	return vmath.vector3((x - 1) * self.cell_size, (y - 1) * self.cell_size, 0)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("set_cell") then
+		set_cell(self, message.x, message.y, message.value)
+	elseif message_id == hash("clear_row") then
+		clear_row(self, message.row)
+	elseif message_id == hash("query_cell") then
+		msg.post(sender, "cell_value", { x = message.x, y = message.y, value = get_cell(self, message.x, message.y) })
+	elseif message_id == hash("check_full_rows") then
+		msg.post(sender, "full_rows", { rows = check_full_rows(self) })
+	elseif message_id == hash("clear_board") then
+		clear_board(self)
+	end
+end
+```
+
+A Snake variant reuses this grid: the head advances one cell per tick (`dt` accumulated to a step timer), self-collision is a value lookup, and food is a random empty cell.
+
+```lua
+go.property("step_time", 0.15)
+
+local DIRS = { up = { x = 0, y = 1 }, down = { x = 0, y = -1 },
+	left = { x = -1, y = 0 }, right = { x = 1, y = 0 } }
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.body = { { x = 5, y = 5 } }     -- head first
+	self.dir = DIRS.right
+	self.timer = 0
+	self.grow = 0
+end
+
+function update(self, dt)
+	self.timer = self.timer + dt
+	if self.timer < self.step_time then return end
+	self.timer = self.timer - self.step_time
+
+	local head = self.body[1]
+	local nx, ny = head.x + self.dir.x, head.y + self.dir.y
+	for _, seg in ipairs(self.body) do
+		if seg.x == nx and seg.y == ny then
+			msg.post("#", "game_over")
+			return
+		end
+	end
+	table.insert(self.body, 1, { x = nx, y = ny })
+	if self.grow > 0 then self.grow = self.grow - 1 else table.remove(self.body) end
+end
+
+function on_input(self, action_id, action)
+	if action.pressed then
+		if action_id == hash("up") and self.dir ~= DIRS.down then self.dir = DIRS.up
+		elseif action_id == hash("down") and self.dir ~= DIRS.up then self.dir = DIRS.down
+		elseif action_id == hash("left") and self.dir ~= DIRS.right then self.dir = DIRS.left
+		elseif action_id == hash("right") and self.dir ~= DIRS.left then self.dir = DIRS.right
+		end
+	end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+```
+
 ### Scoring System
 ```gdscript
 class_name ScoreSystem
@@ -228,6 +364,76 @@ func load_high_score() -> void:
             high_score = file.get_32()
 ```
 
+### Defold
+
+Score, combo, and level are plain self fields. The combo timer decays with `dt` in `update`. High score persists with `sys.save`/`sys.load`. Changes are broadcast as messages for the HUD.
+
+```lua
+local MSG_SCORE = hash("score_changed")
+local MSG_COMBO = hash("combo_changed")
+local MSG_HIGH = hash("high_score_beaten")
+local MSG_LEVEL_UP = hash("level_up")
+
+local LINE_POINTS = { [0] = 0, 100, 300, 500, 800 }
+
+local function high_score_path()
+	return sys.get_save_file("classicgame", "highscore")
+end
+
+function init(self)
+	self.score = 0
+	self.combo = 0
+	self.combo_timer = 0
+	self.level = 1
+	self.lines_to_next = 10
+	local data = sys.load(high_score_path())
+	self.high_score = data.high or 0
+end
+
+local function add_score(self, points)
+	self.score = self.score + points * (1 + self.combo)
+	msg.post("#", MSG_SCORE, { score = self.score })
+	if self.score > self.high_score then
+		self.high_score = self.score
+		msg.post("#", MSG_HIGH, { high = self.high_score })
+		sys.save(high_score_path(), { high = self.high_score })
+	end
+end
+
+local function add_combo(self)
+	self.combo = self.combo + 1
+	self.combo_timer = 2.0
+	msg.post("#", MSG_COMBO, { combo = self.combo })
+end
+
+local function add_lines(self, count)
+	add_score(self, LINE_POINTS[math.min(count, 4)] * self.level)
+	self.lines_to_next = self.lines_to_next - count
+	if self.lines_to_next <= 0 then
+		self.level = self.level + 1
+		self.lines_to_next = self.lines_to_next + 10
+		msg.post("#", MSG_LEVEL_UP, { level = self.level })
+	end
+end
+
+function update(self, dt)
+	if self.combo > 0 then
+		self.combo_timer = self.combo_timer - dt
+		if self.combo_timer <= 0 then
+			self.combo = 0
+			msg.post("#", MSG_COMBO, { combo = 0 })
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("add_score") then add_score(self, message.points)
+	elseif message_id == hash("add_combo") then add_combo(self)
+	elseif message_id == hash("add_lines") then add_lines(self, message.count)
+	end
+end
+```
+
 ### Card System
 ```gdscript
 class_name CardSystem
@@ -292,6 +498,85 @@ func card_name(card: Dictionary) -> String:
     return "%s of %s" % [rank_names[card.rank], suit_names[card.suit]]
 ```
 
+### Defold
+
+Deck, discard, and hands are plain Lua tables of card tables. Each card is data: a suit index, a rank, and a face-up flag. Shuffle is a Fisher-Yates over the deck; draw pops the back. Events go out as messages.
+
+```lua
+local SUITS = { "hearts", "diamonds", "clubs", "spades" }
+local RANK_NAMES = { "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" }
+
+local function create_standard_deck()
+	local deck = {}
+	for suit = 1, 4 do
+		for rank = 1, 13 do
+			table.insert(deck, { suit = suit, rank = rank, face_up = false })
+		end
+	end
+	return deck
+end
+
+local function shuffle(deck)
+	for i = #deck, 2, -1 do
+		local j = math.random(i)
+		deck[i], deck[j] = deck[j], deck[i]
+	end
+end
+
+function init(self)
+	math.randomseed(os.time())
+	self.deck = create_standard_deck()
+	self.discard = {}
+	self.hands = {}       -- player_id -> list of cards
+	shuffle(self.deck)
+	msg.post("#", "deck_shuffled")
+end
+
+local function draw(self, count)
+	local drawn = {}
+	for _ = 1, count or 1 do
+		if #self.deck == 0 then
+			msg.post("#", "deck_empty")
+			break
+		end
+		table.insert(drawn, table.remove(self.deck))
+	end
+	return drawn
+end
+
+local function deal(self, player_ids, cards_each)
+	for _, id in ipairs(player_ids) do
+		self.hands[id] = draw(self, cards_each)
+	end
+end
+
+local function play_card(self, player_id, card_index)
+	local hand = self.hands[player_id]
+	local card = table.remove(hand, card_index)
+	table.insert(self.discard, card)
+	msg.post("#", "card_played", { player = player_id, card = card })
+	return card
+end
+
+local function card_name(card)
+	return RANK_NAMES[card.rank] .. " of " .. SUITS[card.suit]
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("draw") then
+		local drawn = draw(self, message.count)
+		msg.post(sender, "drawn", { cards = drawn })
+	elseif message_id == hash("deal") then
+		deal(self, message.players, message.cards_each)
+	elseif message_id == hash("play_card") then
+		play_card(self, message.player, message.index)
+	elseif message_id == hash("shuffle") then
+		shuffle(self.deck)
+		msg.post("#", "deck_shuffled")
+	end
+end
+```
+
 ### Piece/Tetromino System
 ```gdscript
 class_name PieceSystem
@@ -353,6 +638,97 @@ func apply_rotation(new_cells: Array) -> void:
 
 func move(dir: Vector2i) -> void:
     position_grid += dir
+```
+
+### Defold
+
+Tetromino shapes are a plain Lua table of relative cell offsets. The piece falls on a step timer (`dt` accumulated), rotation builds a new offset list normalized to non-negative coordinates, and world cells are computed for the board controller to test against and render. The lock decision is left to the board (send it the candidate cells, it replies whether the move is legal).
+
+```lua
+go.property("fall_time", 0.8)
+
+local SHAPES = {
+	I = { {0,0},{1,0},{2,0},{3,0} },
+	O = { {0,0},{1,0},{0,1},{1,1} },
+	T = { {0,0},{1,0},{2,0},{1,1} },
+	S = { {1,0},{2,0},{0,1},{1,1} },
+	Z = { {0,0},{1,0},{1,1},{2,1} },
+	L = { {0,0},{0,1},{0,2},{1,2} },
+	J = { {1,0},{1,1},{1,2},{0,2} },
+}
+local SHAPE_KEYS = { "I", "O", "T", "S", "Z", "L", "J" }
+
+local function spawn_piece(self, shape)
+	shape = shape or SHAPE_KEYS[math.random(#SHAPE_KEYS)]
+	self.shape = shape
+	self.cells = {}
+	for _, c in ipairs(SHAPES[shape]) do
+		table.insert(self.cells, { c[1], c[2] })
+	end
+	self.gx, self.gy = 4, 0
+	self.rotation = 0
+end
+
+function init(self)
+	math.randomseed(os.time())
+	self.timer = 0
+	spawn_piece(self)
+end
+
+local function world_cells(self)
+	local out = {}
+	for _, c in ipairs(self.cells) do
+		table.insert(out, { x = c[1] + self.gx, y = c[2] + self.gy })
+	end
+	return out
+end
+
+local function rotate_cw(self)
+	local rotated = {}
+	for _, c in ipairs(self.cells) do
+		table.insert(rotated, { c[2], -c[1] })
+	end
+	local min_x, min_y = math.huge, math.huge
+	for _, c in ipairs(rotated) do
+		min_x = math.min(min_x, c[1])
+		min_y = math.min(min_y, c[2])
+	end
+	for _, c in ipairs(rotated) do
+		c[1], c[2] = c[1] - min_x, c[2] - min_y
+	end
+	return rotated
+end
+
+local function apply_rotation(self, new_cells)
+	self.cells = new_cells
+	self.rotation = (self.rotation + 1) % 4
+	msg.post("#", "piece_rotated")
+end
+
+function update(self, dt)
+	self.timer = self.timer + dt
+	if self.timer >= self.fall_time then
+		self.timer = 0
+		self.gy = self.gy + 1
+		-- ask the board whether this position is legal; it replies "fall_result"
+		msg.post("/board#controller", "test_cells", { cells = world_cells(self), owner = msg.url() })
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("move") then
+		self.gx = self.gx + message.dx
+		self.gy = self.gy + message.dy
+	elseif message_id == hash("rotate") then
+		apply_rotation(self, rotate_cw(self))
+	elseif message_id == hash("fall_result") then
+		if not message.legal then
+			self.gy = self.gy - 1   -- revert, board locks and spawns next
+			msg.post("/board#controller", "lock_piece", { cells = world_cells(self) })
+			spawn_piece(self)
+		end
+	end
+end
 ```
 
 ---

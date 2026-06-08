@@ -148,6 +148,102 @@ public class FPSController : MonoBehaviour
 }
 ```
 
+### Defold
+```lua
+-- fps_player.script on the player .go (has a kinematic collision object "#collision")
+go.property("walk_speed", 5.0)
+go.property("sprint_speed", 8.0)
+go.property("crouch_speed", 2.5)
+go.property("jump_velocity", 8.0)
+go.property("mouse_sensitivity", 0.002)
+
+local GRAVITY = -20.0
+local MAX_PITCH = math.rad(89)
+
+local function clamp(v, lo, hi)
+	if v < lo then return lo elseif v > hi then return hi else return v end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.velocity = vmath.vector3()
+	self.move = vmath.vector3()       -- per-frame planar input (camera space)
+	self.yaw = 0
+	self.pitch = 0
+	self.grounded = false
+	self.correction = vmath.vector3()
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	self.correction = vmath.vector3()  -- reset per-frame penetration accumulator
+	-- gravity
+	if not self.grounded then
+		self.velocity.y = self.velocity.y + GRAVITY * dt
+	end
+	self.grounded = false             -- re-proven each frame by contacts
+
+	-- horizontal move relative to current yaw
+	local sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
+	local fwd = vmath.vector3(-sin_y, 0, -cos_y)
+	local right = vmath.vector3(cos_y, 0, -sin_y)
+	local wish = right * self.move.x + fwd * self.move.z
+	if vmath.length_sqr(wish) > 0 then wish = vmath.normalize(wish) end
+
+	local speed = self.speed or self.walk_speed
+	local pos = go.get_position()
+	pos = pos + wish * speed * dt + vmath.vector3(0, self.velocity.y, 0) * dt
+	go.set_position(pos)
+
+	-- aim the head/camera child object
+	go.set_rotation(vmath.quat_rotation_y(self.yaw))
+	go.set_rotation(vmath.quat_rotation_x(self.pitch), "#head")
+
+	self.move = vmath.vector3()
+	self.speed = self.walk_speed
+end
+
+function on_input(self, action_id, action)
+	if action_id == nil then         -- mouse motion has no action_id
+		self.yaw = self.yaw - action.dx * self.mouse_sensitivity
+		self.pitch = clamp(self.pitch - action.dy * self.mouse_sensitivity, -MAX_PITCH, MAX_PITCH)
+	elseif action_id == hash("move_forward") then
+		self.move.z = self.move.z - action.value
+	elseif action_id == hash("move_backward") then
+		self.move.z = self.move.z + action.value
+	elseif action_id == hash("move_left") then
+		self.move.x = self.move.x - action.value
+	elseif action_id == hash("move_right") then
+		self.move.x = self.move.x + action.value
+	elseif action_id == hash("sprint") then
+		self.speed = self.sprint_speed
+	elseif action_id == hash("crouch") then
+		self.speed = self.crouch_speed
+	elseif action_id == hash("jump") and action.pressed and self.grounded then
+		self.velocity.y = self.jump_velocity
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") then
+		-- resolve penetration for the kinematic body and detect floor
+		if message.distance > 0 then
+			local proj = vmath.dot(self.correction, message.normal)
+			local comp = (message.distance - proj) * message.normal
+			self.correction = self.correction + comp
+			go.set_position(go.get_position() + comp)
+		end
+		if message.normal.y > 0.7 then
+			self.grounded = true
+			if self.velocity.y < 0 then self.velocity.y = 0 end
+		end
+	end
+end
+```
+
 ---
 
 ## Third-Person Controller
@@ -246,6 +342,96 @@ public class ThirdPersonController : MonoBehaviour
 }
 ```
 
+### Defold
+```lua
+-- third_person.script on the player .go; "#model" child holds the visual mesh,
+-- "/camera_pivot" object orbits the player and defines movement frame.
+go.property("move_speed", 5.0)
+go.property("sprint_speed", 8.0)
+go.property("jump_velocity", 8.0)
+go.property("rotation_speed", 10.0)
+
+local GRAVITY = -20.0
+
+local function lerp_angle(a, b, t)
+	local d = b - a
+	while d > math.pi do d = d - 2 * math.pi end
+	while d < -math.pi do d = d + 2 * math.pi end
+	return a + d * t
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.velocity = vmath.vector3()
+	self.move = vmath.vector3()
+	self.facing = 0
+	self.grounded = false
+	self.sprinting = false
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	if not self.grounded then
+		self.velocity.y = self.velocity.y + GRAVITY * dt
+	end
+	self.grounded = false
+
+	-- camera-relative direction (yaw of the pivot object)
+	local cam_rot = go.get_rotation("/camera_pivot")
+	local cam_fwd = vmath.rotate(cam_rot, vmath.vector3(0, 0, -1))
+	cam_fwd.y = 0
+	local cam_right = vmath.rotate(cam_rot, vmath.vector3(1, 0, 0))
+	cam_right.y = 0
+	local wish = cam_right * self.move.x + cam_fwd * self.move.z
+
+	local pos = go.get_position()
+	if vmath.length_sqr(wish) > 0 then
+		wish = vmath.normalize(wish)
+		local speed = self.sprinting and self.sprint_speed or self.move_speed
+		pos = pos + wish * speed * dt
+		-- turn the model toward movement
+		self.facing = lerp_angle(self.facing, math.atan2(wish.x, wish.z), self.rotation_speed * dt)
+		go.set_rotation(vmath.quat_rotation_y(self.facing), "#model")
+	end
+	pos = pos + vmath.vector3(0, self.velocity.y, 0) * dt
+	go.set_position(pos)
+
+	self.move = vmath.vector3()
+	self.sprinting = false
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("move_forward") then
+		self.move.z = self.move.z - action.value
+	elseif action_id == hash("move_backward") then
+		self.move.z = self.move.z + action.value
+	elseif action_id == hash("move_left") then
+		self.move.x = self.move.x - action.value
+	elseif action_id == hash("move_right") then
+		self.move.x = self.move.x + action.value
+	elseif action_id == hash("sprint") then
+		self.sprinting = true
+	elseif action_id == hash("jump") and action.pressed and self.grounded then
+		self.velocity.y = self.jump_velocity
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") then
+		if message.distance > 0 then
+			go.set_position(go.get_position() + message.normal * message.distance)
+		end
+		if message.normal.y > 0.7 then
+			self.grounded = true
+			if self.velocity.y < 0 then self.velocity.y = 0 end
+		end
+	end
+end
+```
+
 ---
 
 ## Top-Down Controller
@@ -277,6 +463,71 @@ func look_at_mouse() -> void:
     look_at(mouse_pos)
 ```
 
+### Defold
+```lua
+-- top_down.script on a 2D player .go with a kinematic collision object "#collision".
+go.property("move_speed", 200.0)     -- pixels/sec
+go.property("acceleration", 1500.0)
+go.property("friction", 1200.0)
+
+local function move_toward(v, target, max_delta)
+	local d = target - v
+	local len = vmath.length(d)
+	if len <= max_delta or len == 0 then return target end
+	return v + d * (max_delta / len)
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.velocity = vmath.vector3()
+	self.input = vmath.vector3()
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	if vmath.length_sqr(self.input) > 0 then
+		local wish = vmath.normalize(self.input) * self.move_speed
+		self.velocity = move_toward(self.velocity, wish, self.acceleration * dt)
+		-- face movement direction (optional)
+		local angle = math.atan2(self.input.y, self.input.x)
+		go.set_rotation(vmath.quat_rotation_z(angle))
+	else
+		self.velocity = move_toward(self.velocity, vmath.vector3(), self.friction * dt)
+	end
+
+	go.set_position(go.get_position() + self.velocity * dt)
+	self.input = vmath.vector3()
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("move_right") then
+		self.input.x = self.input.x + action.value
+	elseif action_id == hash("move_left") then
+		self.input.x = self.input.x - action.value
+	elseif action_id == hash("move_up") then
+		self.input.y = self.input.y + action.value
+	elseif action_id == hash("move_down") then
+		self.input.y = self.input.y - action.value
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("contact_point_response") and message.distance > 0 then
+		go.set_position(go.get_position() + message.normal * message.distance)
+	end
+end
+
+-- mouse-aim variant: point at the cursor instead of the move dir
+local function look_at_mouse(self, action)
+	local pos = go.get_position()
+	local angle = math.atan2(action.y - pos.y, action.x - pos.x)
+	go.set_rotation(vmath.quat_rotation_z(angle))
+end
+```
+
 ---
 
 ## Vehicle Controller
@@ -301,6 +552,65 @@ func _physics_process(_delta: float) -> void:
         brake = max_brake_force
     else:
         brake = 0.0
+```
+
+### Defold
+```lua
+-- vehicle.script on a car .go with a dynamic collision object "#collision".
+-- Defold has no built-in raycast-wheel vehicle; this drives an arcade-style body
+-- by applying forces/torque to the physics object and steering the heading.
+go.property("max_engine_force", 400.0)
+go.property("max_brake_force", 50.0)
+go.property("max_steer_angle", 0.5)   -- radians/sec at full lock
+go.property("max_speed", 30.0)
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.throttle = 0   -- -1..1
+	self.steer = 0      -- -1..1
+	self.handbrake = false
+	self.heading = 0
+	self.speed = 0
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	-- steering only bites while moving, like a real car
+	self.heading = self.heading + self.steer * self.max_steer_angle * dt * math.min(1, math.abs(self.speed))
+	go.set_rotation(vmath.quat_rotation_y(self.heading))
+
+	local accel = self.throttle * (self.max_engine_force / 100)
+	self.speed = self.speed + accel * dt
+	if self.handbrake then
+		local drop = (self.max_brake_force / 10) * dt
+		self.speed = self.speed > 0 and math.max(0, self.speed - drop) or math.min(0, self.speed + drop)
+	end
+	self.speed = math.max(-self.max_speed, math.min(self.max_speed, self.speed))
+
+	local fwd = vmath.rotate(go.get_rotation(), vmath.vector3(0, 0, -1))
+	go.set_position(go.get_position() + fwd * self.speed * dt)
+
+	self.throttle = 0
+	self.steer = 0
+	self.handbrake = false
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("accelerate") then
+		self.throttle = action.value
+	elseif action_id == hash("brake") then
+		self.throttle = -action.value
+	elseif action_id == hash("steer_left") then
+		self.steer = action.value
+	elseif action_id == hash("steer_right") then
+		self.steer = -action.value
+	elseif action_id == hash("handbrake") then
+		self.handbrake = true
+	end
+end
 ```
 
 ---
