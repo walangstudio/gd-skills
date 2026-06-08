@@ -57,7 +57,7 @@ aa1713c8f320fdb899ea62d19baf86eae231d2a6  commands/setup-roblox.md
 5cdcab9c218fd0a0e319d8465efdcb9888dc3f33  commands/setup-unreal.md
 079bb2081864bb6cef328e090985f9420f2f74a4  commands/setup-web.md
 2a313b6033bda86c64dd2185db3e4f517899da8c  commands/validate-integration.md
-77ff26f5d5a5b0c66cb8321c0c571239dcb1aeb7  commands/verify-project.md
+61f4b53156ede38296cad053393ffe7f401ff031  commands/verify-project.md
 114168bfaece9b79679bde633c0db6d28bb8c0c1  contexts/defold-mode.md
 2bb103e10541df8014a72eada0babf2c32a3555f  contexts/godot-mode.md
 b74b3dd06f7f2bf38d4509ce6ddf4fc78f9751bd  contexts/roblox-mode.md

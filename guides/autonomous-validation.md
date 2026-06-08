@@ -13,7 +13,7 @@ user is the last check, not the first.
 
 ## The loop (the builder MUST do this before saying "done")
 
-1. **Completeness** — every system the game promised is actually present (player, enemies/obstacles, combat/interaction, UI/HUD, menus, save/load, audio — whatever the genre + the user's answers implied). No TODO / stub / placeholder / empty handler / `pass`-only function left behind; every referenced scene/prefab/script/asset path resolves; there is a runnable entry point. Build what's missing; delete dead references.
+1. **Completeness** — every system the game promised is actually present (player, enemies/obstacles, combat/interaction, UI/HUD, menus, save/load, **audio** (a manager + music + SFX hooks on the key actions), and **baseline game feel** (genre-appropriate juice per `guides/game-feel.md` — e.g. coyote time + jump buffer for a platformer; hit stop + screen shake + damage flash for combat; SFX/feedback on every player action) — whatever the genre + the user's answers implied). Audio and polish are part of a finished game, not optional extras. No TODO / stub / placeholder / empty handler / `pass`-only function left behind; every referenced scene/prefab/script/asset path resolves; there is a runnable entry point. Build what's missing; delete dead references.
 2. **Wire check** — run the `integration-validator` over the assembled components: every emitted event/signal has a listener, no null/nil references at runtime entry points, save/load covers all runtime state, client/server boundaries hold (Roblox), scene/prefab links resolve (Unity/Godot). Fix every FAIL.
 3. **Consistency** — if `design/registry/entities.yaml` exists, run the `/consistency-check`: stats, item values, and formulas in the code match the registry. Fix mismatches (or reconcile the registry to the intended values).
 4. **Configurability** — enforce `rules/configuration-and-tuning.md`: tunables (speed, jump, gravity, health, damage, cooldowns, spawn rates, costs, timers, level/wave data) are exported/serialized properties or config data in one discoverable place — NOT bare literals buried in logic. Hoist any magic numbers found in hot paths to the engine-idiomatic config surface (Godot `@export`/Resource, Unity `[SerializeField]`/ScriptableObject, Unreal `UPROPERTY`/DataAsset, Roblox Attributes/config module, Defold `go.property`/config module, Web `config.js`/JSON).
@@ -42,6 +42,8 @@ When you escalate, ask one specific question with options — never "it might ha
 - Configurability: PASS (speed/jump/health/damage are @export/config — no magic numbers in logic)
 - Core loop: PASS (move ✓, reach exit → win ✓, touch enemy → lose life → game over ✓)
 - Menus: PASS (main → play → pause → game over → main)
+- Audio: PASS (AudioManager + menu/gameplay music + SFX on jump/coin/hit/death)
+- Polish: PASS (coyote time + jump buffer + landing squash; screen shake + hit flash on damage)
 - Fixed during validation: 3 (wired the missing SaveSystem→inventory call; corrected goblin damage 7→5 to match registry; hoisted hardcoded player speed/jump to @export vars)
 - Open: none
 ```
