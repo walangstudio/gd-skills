@@ -5,7 +5,7 @@
 fdf7904f6aeec68e418ef1c71d4607c2ab0893d2  agents/defold-specialist.md
 1e19ab11d40331623beabbfad488ccfec2ffced3  agents/full-game-builder.md
 ec613cbd7f67a8eb1e39f4c772a6b2af7fc47b36  agents/game-architect.md
-1c469044144a9c15bd0e5c90787200e18ebcb49e  agents/game-feel-specialist.md
+6d216ac5d9477fca1ea58a8c5f6ea9318892fc52  agents/game-feel-specialist.md
 e7089aeef1ef121b175ddd2ead0ff2155cbc62d2  agents/genre-template-master.md
 557f3802dff920d98629ea175d1d9700e1f68822  agents/godot-specialist.md
 f9f60b71d269c008558378187fc7ae568085352b  agents/integration-validator.md
@@ -19,7 +19,7 @@ ce1288d45022967cb425f7c23578cdcb397b566f  agents/roblox-specialist.md
 1b2bd03d290dffc1181ae1b25d543294720f3b25  agents/unity-specialist.md
 55ecad3890cfa1a8710e96a31e369e92ad9291a0  agents/unreal-specialist.md
 681ad4c4775678c730e455316eafa3cf06b4c3ff  commands/acceptance.md
-710783615b87013d1291bb13c9ab313db9161159  commands/add-game-feel.md
+ee5daaef93f2091be6f02ee5417f5d3090b85508  commands/add-game-feel.md
 05b5e2b87bb22cb01446e1d69da91854da747922  commands/build-team.md
 28d0bfae239c35ba509654d3a3c1add3b63876f8  commands/checkpoint.md
 49c4348ad01d36860d782eab99cfd6b7e29f63e6  commands/consistency-check.md
