@@ -40,7 +40,7 @@ bc26602ee0976315aa06f0df99b9b0b4ee2cb98a  commands/create-platformer.md
 0d93512c9fed55e736cd085528480f93c1d4dc95  commands/create-puzzle.md
 b4f38b3a308dba35c7f22707dfb129b22630fba2  commands/create-racing.md
 c845e20fe07b460c99491e8f8e428e76529591ce  commands/create-roguelike.md
-ee3462c96a14e97eae1cf215eae133d3eaefe066  commands/create-rpg.md
+ae00bc1a4787af52480f6b1676a1c31c9c28e6d9  commands/create-rpg.md
 375f7ad7f49e54380074f863e8f5e6219ad5f0ac  commands/create-settings.md
 e7bc0f55dc38c231a7ebaf3720052abdbb0e034a  commands/create-survival.md
 e5f89ee88721ea38ff4a810d37eba67bf2779923  commands/create-tower-defense.md
@@ -99,7 +99,7 @@ d4fab510bc8200ef5d7cd3a7d1377fa22af889cf  skills/puzzle-template/SKILL.md
 bc11d82a41c9f895bfaed56f54b94b51b2302362  skills/roblox-patterns/SKILL.md
 d5b10144f3807f7cb651a41bff61a6fcfe2d1224  skills/roblox-toolchain/SKILL.md
 d48fa77ae2bda8fb73ea1d6ff623d36f50a729f8  skills/roguelike-template/SKILL.md
-eb34b26db97c4a9650818f2ab3713d204272deb3  skills/rpg-template/SKILL.md
+75c4774685ab8baf7a01c5813c5602cc0b6fbf0d  skills/rpg-template/SKILL.md
 f5991578f989b06d4ed93aadbe680cb16a90340f  skills/save-load-systems/SKILL.md
 b40fe914b28c0c281efa74e60f92cc0bff5598e0  skills/survival-template/SKILL.md
 05e5e522a43b07b548d2c7cefcd60359c0a81371  skills/tower-defense-template/SKILL.md
