@@ -649,9 +649,55 @@ func _on_lives_changed(new_lives: int) -> void:
     lives_label.text = "Lives: %d" % new_lives
 ```
 
+## 2.5D Cinematic Platformer (REPLACED style)
+
+"2.5D platformer" (REPLACED, Ori, The Last Night) = **2D gameplay on a fixed plane inside a
+real 3D world** — pixel-art / 2D character sprites with 3D-rendered environments, parallax from
+genuine depth, and a cinematic post stack (volumetric light/god-rays, bloom, depth-of-field,
+chromatic aberration, film grain, color grading). The defining trait is the **controller stays
+2D** (X = run, Y = jump) while the scene is 3D; Z is locked to the gameplay plane and used only
+for visual depth. The run/jump/coyote-time/jump-buffer logic above is unchanged — only the
+render setup and the plane-lock are new.
+
+### Godot 4
+```gdscript
+# Player = CharacterBody3D locked to the XY plane; the visible character is a Sprite3D
+# (billboarded, texture_filter = Nearest) so a pixel-art sprite lives in a 3D scene.
+# Reuse the 2D controller's math, just on 3D axes, and pin Z every frame:
+#   velocity.x = input_dir * SPEED
+#   velocity.y -= GRAVITY * delta            # then move_and_slide()
+#   global_position.z = 0.0                  # never drift off the gameplay plane
+func _setup_cinematic(cam: Camera3D, world_env: WorldEnvironment) -> void:
+    cam.projection = Camera3D.PROJECTION_ORTHOGONAL   # slight perspective also works
+    var e := world_env.environment
+    e.glow_enabled = true                             # bloom / neon
+    e.volumetric_fog_enabled = true                   # god-rays / atmosphere (the REPLACED look)
+    e.adjustment_enabled = true                       # color grading (cyberpunk palette)
+    var attrs := CameraAttributesPractical.new()
+    attrs.dof_blur_far_enabled = true                 # depth of field
+    cam.attributes = attrs
+# Parallax = real depth: put background/foreground meshes at different Z — the camera gives
+# genuine parallax, no ParallaxBackground hack. Chromatic aberration + grain = a full-screen
+# shader (a ColorRect with a screen-space shader over the viewport).
+```
+
+### Other engines
+- **Unity (URP/HDRP):** player on a fixed Z in a 3D scene, SpriteRenderer billboarded (`Filter Mode = Point`); a **Volume** with **Bloom + Depth of Field + Chromatic Aberration + Film Grain + Color Adjustments**, plus **volumetric lighting / light shafts** (HDRP volumetrics or URP fog); side-scroller camera; parallax via real depth.
+- **Unreal:** Paper2D / PaperZD sprite on a constrained plane in a 3D level; a **Post Process Volume** with Bloom, DOF, Chromatic Aberration, Grain, plus Unreal's native **volumetric fog + light shafts** — the strongest fit for REPLACED's cinematic lighting.
+- **Web (Three.js):** orthographic/slight-perspective camera; player as a `NearestFilter` billboarded sprite at a fixed Z; meshes at varying Z for parallax; `EffectComposer` with **UnrealBloomPass + BokehPass (DOF)** + custom **chromatic-aberration / film-grain** passes + a radial-blur **god-ray** pass. Reuse the verified `samples/web/platformer` logic.
+- **Roblox:** lock the camera to a side view, character on a plane; `Lighting` FX **BloomEffect + DepthOfFieldEffect + ColorCorrectionEffect + Atmosphere + SunRaysEffect**.
+- **Defold:** 2D-first — do faux-2.5D with parallax sprite layers + scaled sprites + 2D lights; true volumetric/DOF is out of reach, so pick Godot/Unity/Unreal for the full REPLACED look.
+
+Consult `docs/engine-reference/<engine>/modules/rendering.md` for the target engine's post-processing API before emitting code.
+
 ## Customization Options
 
 When using `/create-platformer`, users can choose:
+
+**Perspective**:
+- 2D side-scrolling (classic)
+- 2.5D cinematic (3D world, 2D gameplay — REPLACED style; see section above)
+- 3D platformer
 
 **Player Abilities**:
 - Jump only (basic)
