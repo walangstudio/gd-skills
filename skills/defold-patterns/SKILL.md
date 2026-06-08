@@ -196,6 +196,88 @@ end
 - Configure **group** and **mask** on each collision object component.
 - **Dynamic** bodies are moved by the physics sim; **kinematic** bodies you move and resolve yourself; **static** bodies don't move.
 
+## Scene & Component File Formats (the part LLMs get wrong)
+
+`.go`, `.collisionobject`, `.render`, etc. are **text-protobuf** files with a strict schema —
+an unknown field or a malformed embedded blob makes the editor refuse to load the file. Two
+rules keep generated projects loadable:
+
+**1. Author a collision object as its own `.collisionobject` file and REFERENCE it — do not
+hand-write an embedded one.** Embedded components require the inner desc to be an escaped,
+line-by-line quoted protobuf string (`"type: ...\n" "mass: 0.0\n" ...`); getting one quote or
+`\n` wrong yields *"Invalid embedded component 'collisionobject'"*. The referenced form is far
+safer:
+
+```
+# player.collisionobject  (CollisionObjectDesc)
+type: COLLISION_OBJECT_TYPE_KINEMATIC   # or _DYNAMIC / _STATIC / _TRIGGER
+mass: 0.0                               # MUST be > 0 for DYNAMIC; 0 for the others
+friction: 0.1
+restitution: 0.5
+group: "player"
+mask: "enemy"                           # one `mask:` line per group it collides with
+mask: "wall"
+embedded_collision_shape {
+  shapes {
+    shape_type: TYPE_BOX                # TYPE_SPHERE -> 1 data (radius); TYPE_CAPSULE -> 2
+    position { }
+    rotation { }
+    index: 0
+    count: 3                            # BOX uses 3 data values = half-extents x,y,z
+  }
+  data: 16.0
+  data: 16.0
+  data: 16.0
+}
+```
+
+```
+# player.go  (PrototypeDesc) — reference components, don't embed the collision desc
+components {
+  id: "script"
+  component: "/player/player.script"
+}
+components {
+  id: "collisionobject"
+  component: "/player/player.collisionobject"
+}
+embedded_components {                    # embedded is fine for a simple sprite
+  id: "sprite"
+  type: "sprite"
+  data: "default_animation: \"idle\"\n"
+  "material: \"/builtins/materials/sprite.material\"\n"
+  "textures {\n"
+  "  sampler: \"texture_sampler\"\n"
+  "  texture: \"/assets/player.atlas\"\n"
+  "}\n"
+  ""
+}
+```
+
+**2. A `.render` file (RenderPrototypeDesc) has ONLY `script` (+ optional material /
+render-target bindings). It has NO `clear_color` or any draw-state field** — adding one gives
+*"unknown fields ... RenderPrototypeDesc.clear_color"*. Clear color lives in the
+**`.render_script`**, and most games don't need a custom render file at all (`game.project`
+already points `[render]` at `/builtins/render/default.render`). Only author one to customize
+the pipeline:
+
+```
+# iso.render  (RenderPrototypeDesc) — a script reference, nothing else
+script: "/render/iso.render_script"
+```
+
+```lua
+-- iso.render_script — THIS is where clear color goes
+function update(self)
+    render.clear({
+        [render.BUFFER_COLOR_BIT]   = vmath.vector4(0.1, 0.1, 0.15, 1.0),
+        [render.BUFFER_DEPTH_BIT]   = 1,
+        [render.BUFFER_STENCIL_BIT] = 0,
+    })
+    -- ... draw predicates ...
+end
+```
+
 ## GUI / HUD
 
 ```lua
@@ -292,6 +374,20 @@ msg.post("/enemy#script", "take_damage", { amount = 10 })
 local id = factory.create("#bulletfactory", pos)  -- ... go.delete(id) shortly after
 ```
 ### ✅ CORRECT: Pool and recycle (see Factories above)
+
+### ❌ WRONG: `clear_color` (or any draw state) in a `.render` file
+```
+# iso.render — fails: "unknown fields ... RenderPrototypeDesc.clear_color"
+script: "/render/iso.render_script"
+clear_color { x: 0.1 y: 0.1 z: 0.15 w: 1.0 }
+```
+### ✅ CORRECT: clear color goes in the `.render_script` (see Scene File Formats)
+
+### ❌ WRONG: hand-escaped embedded collision object
+```
+embedded_components { id: "collisionobject" type: "collisionobject" data: "type: KINEMATIC" }
+```
+### ✅ CORRECT: a separate `.collisionobject` file referenced via `components {}` (see Scene File Formats)
 
 ---
 

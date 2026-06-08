@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete engine-reference module docs for all 6 engines (`docs/engine-reference/<engine>/modules/`) — core, scripting, physics, rendering, ui, audio, animation, navigation, each with verified APIs, runnable snippets, and gotchas
 
 ### Fixed
+- Defold codegen produced unloadable scene files (`/create-*` for Defold) — the plugin had no canonical examples of the strict text-protobuf file formats, so the generator invented invalid ones (embedded `collisionobject` with a malformed `data:` blob → *"Invalid embedded component"*; `clear_color` in a `.render` file → *"unknown fields ... RenderPrototypeDesc.clear_color"*). Added a "Scene & Component File Formats" section to `defold-patterns` (reference a separate `.collisionobject` file instead of hand-escaping an embedded one; `.render` holds only `script`, clear color goes in the `.render_script`) plus matching gotchas to the Defold physics/rendering engine-reference docs
 - `roblox-toolchain` skill was missing YAML frontmatter (could fail to load); added `name`/`description`
 - Stale engine lists in `genre-template-master` and `performance-debugger` agents (and the interactive engine menu) now list all 6 engines incl. Defold; corrected component counts in CONTRIBUTING.md
 - Command injection vulnerability in hooks.json — moved inline `node -e` to standalone .js scripts

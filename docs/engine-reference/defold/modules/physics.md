@@ -54,6 +54,7 @@ end
 - `collision_response` is a coarse "we touched"; `contact_point_response` gives normal + penetration for manual resolution.
 - Triggers fire `trigger_response` (with `message.enter` true/false), NOT `collision_response`.
 - Group/mask must be mutual: A collides with B only if A's mask includes B's group AND B's mask includes A's group.
+- **File format:** author the collision object as its own `.collisionobject` file and reference it from the `.go` via `components { id: "collisionobject" component: "/p/p.collisionobject" }`. Do NOT hand-write an `embedded_components` collision object — its `data:` must be an escaped, line-by-line quoted protobuf string, and any slip yields *"Invalid embedded component 'collisionobject'"*. `mass` must be > 0 for `COLLISION_OBJECT_TYPE_DYNAMIC`, 0 for kinematic/static. See the `defold-patterns` skill "Scene & Component File Formats" for the exact text.
 
 ## See also
 - `defold-patterns` skill, `defold-style` rule, `defold-specialist` agent
