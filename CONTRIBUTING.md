@@ -121,3 +121,7 @@ This runs `scripts/regenerate-checksums.sh` and stages `CHECKSUMS.sha256` automa
 4. Run both validation scripts
 5. Regenerate CHECKSUMS.sha256
 6. Submit a PR with a clear description of what you added/changed
+
+## Contribution policy
+
+This project uses a trusted-contributor model: changes land through pull requests reviewed by a member of the **contributors** team, and external PRs are reviewed at the maintainers' discretion and may be closed. Open an issue before a PR. AI assistance is allowed, but you must understand and test every line — low-effort or AI-generated "slop" PRs are closed on sight; disclose AI use in the PR. Report security issues privately (see [SECURITY.md](SECURITY.md)), never in a public issue.
